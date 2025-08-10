@@ -6,8 +6,8 @@
 - [x] 1.1 Write tests for GTDFile, GTDFrontmatter, GTDTask, and MarkdownLink data models
 - [x] 1.2 Implement GTDFile with file_type detection in models/gtd_file.py
 - [x] 1.3 Implement GTDTask with GTD properties and Obsidian Tasks metadata
-- [ ] 1.4 Write tests for VaultConfig with GTD folder structure
-- [ ] 1.5 Implement VaultConfig class in models/vault_config.py
+- [x] 1.4 Write tests for VaultConfig with GTD folder structure
+- [x] 1.5 Implement VaultConfig class in models/vault_config.py
 - [ ] 1.6 Add python-frontmatter dependency to pyproject.toml
 - [ ] 1.7 Verify all model tests pass
 
