@@ -8,8 +8,8 @@
 - [x] 1.3 Implement GTDTask with GTD properties and Obsidian Tasks metadata
 - [x] 1.4 Write tests for VaultConfig with GTD folder structure
 - [x] 1.5 Implement VaultConfig class in models/vault_config.py
-- [ ] 1.6 Add python-frontmatter dependency to pyproject.toml
-- [ ] 1.7 Verify all model tests pass
+- [x] 1.6 Add python-frontmatter dependency to pyproject.toml
+- [x] 1.7 Verify all model tests pass
 
 ### 2. Implement parsing components
 - [ ] 2.1 Write tests for TaskExtractor with Obsidian Tasks format
