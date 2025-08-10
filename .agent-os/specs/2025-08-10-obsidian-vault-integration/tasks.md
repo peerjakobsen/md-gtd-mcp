@@ -31,12 +31,12 @@
 - [x] 3.7 Verify all service tests pass
 
 ### 4. Implement MCP tools interface
-- [ ] 4.1 Write tests for setup_gtd_vault tool (creates missing GTD files/folders)
+- [x] 4.1 Write tests for setup_gtd_vault tool (creates missing GTD files/folders)
   - **CRITICAL**: Test that existing files are NEVER overwritten (data safety)
   - Test complete GTD structure creation when vault is empty
   - Test selective creation when some files already exist
   - Test context files creation with Obsidian Tasks query syntax
-- [ ] 4.2 Implement setup_gtd_vault tool in server.py
+- [x] 4.2 Implement setup_gtd_vault tool in server.py
   - **CRITICAL**: Only create files/folders that don't exist - NEVER overwrite existing files
   - Use Path.exists() checks before creating any file or folder
   - Return detailed status report of what was created vs. already existed
