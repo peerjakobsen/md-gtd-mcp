@@ -31,12 +31,23 @@
 - [x] 3.7 Verify all service tests pass
 
 ### 4. Implement MCP tools interface
-- [ ] 4.1 Write tests for MCP tool responses and JSON structure
-- [ ] 4.2 Update server.py with read_gtd_file tool
-- [ ] 4.3 Implement list_gtd_files tool in server.py
-- [ ] 4.4 Implement read_all_gtd_files tool in server.py
-- [ ] 4.5 Test MCP server startup with vault configuration
-- [ ] 4.6 Verify all MCP tool tests pass
+- [ ] 4.1 Write tests for setup_gtd_vault tool (creates missing GTD files/folders)
+  - **CRITICAL**: Test that existing files are NEVER overwritten (data safety)
+  - Test complete GTD structure creation when vault is empty
+  - Test selective creation when some files already exist
+  - Test context files creation with Obsidian Tasks query syntax
+- [ ] 4.2 Implement setup_gtd_vault tool in server.py
+  - **CRITICAL**: Only create files/folders that don't exist - NEVER overwrite existing files
+  - Use Path.exists() checks before creating any file or folder
+  - Return detailed status report of what was created vs. already existed
+- [ ] 4.3 Write tests for read_gtd_file MCP tool
+- [ ] 4.4 Implement read_gtd_file tool in server.py
+- [ ] 4.5 Write tests for list_gtd_files MCP tool
+- [ ] 4.6 Implement list_gtd_files tool in server.py
+- [ ] 4.7 Write tests for read_all_gtd_files MCP tool
+- [ ] 4.8 Implement read_all_gtd_files tool in server.py
+- [ ] 4.9 Test MCP server startup with vault configuration
+- [ ] 4.10 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
 - [ ] 5.1 Create comprehensive integration test with sample vault
@@ -58,7 +69,7 @@
 - **Task 1**: Medium complexity (3-4 hours) - GTD-aligned data structures
 - **Task 2**: High complexity (4-5 hours) - Obsidian Tasks parsing with GTD metadata
 - **Task 3**: Medium complexity (3-4 hours) - GTD folder structure handling
-- **Task 4**: Low-Medium complexity (2-3 hours) - MCP integration
+- **Task 4**: Medium complexity (3-4 hours) - MCP integration + vault setup tool
 - **Task 5**: Low complexity (1-2 hours) - Testing and documentation
 
-**Total Estimate**: 13-18 hours of development time
+**Total Estimate**: 14-19 hours of development time

@@ -100,6 +100,22 @@ class MarkdownLink:
 
 ### Implementation Strategy
 
+#### GTD Vault Setup Strategy
+- **Context Files Creation**: Create during vault setup, not dynamically
+- Context files contain Obsidian Tasks query syntax (not actual tasks):
+  ```markdown
+  # 📞 Calls Context
+
+  ```tasks
+  not done
+  description includes @calls
+  sort by due
+  ```
+  ```
+- Standard context files: @calls.md, @computer.md, @errands.md, @home.md
+- Provides immediate user education about GTD workflow
+- Matches Obsidian Tasks plugin expectations for query functionality
+
 #### File Reading
 - Use `pathlib.Path` for cross-platform path handling
 - Read files with UTF-8 encoding
@@ -155,9 +171,13 @@ class VaultConfig:
 ### MCP Tools Interface
 
 #### Primary Tools
-1. `read_gtd_file(file_path: str) -> GTDFile` - Read and parse single GTD file
-2. `list_gtd_files() -> List[str]` - List all GTD files in vault
-3. `read_all_gtd_files() -> List[GTDFile]` - Batch read all GTD files
+1. `setup_gtd_vault(vault_path: str) -> dict` - Create GTD folder structure if missing
+   - **CRITICAL SAFETY**: Only creates files/folders that don't exist - NEVER overwrites existing files
+   - Creates gtd/ folder, standard GTD files, contexts/ folder with query-based context files
+   - Returns detailed status of what was created vs. what already existed
+2. `read_gtd_file(vault_path: str, file_path: str) -> dict` - Read and parse single GTD file
+3. `list_gtd_files(vault_path: str, file_type: str = None) -> list[dict]` - List all GTD files in vault
+4. `read_all_gtd_files(vault_path: str) -> dict` - Batch read all GTD files
 
 ### Dependencies
 
