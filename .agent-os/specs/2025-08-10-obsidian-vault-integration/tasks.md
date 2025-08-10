@@ -12,8 +12,8 @@
 - [x] 1.7 Verify all model tests pass
 
 ### 2. Implement parsing components
-- [ ] 2.1 Write tests for TaskExtractor with Obsidian Tasks format
-- [ ] 2.2 Implement TaskExtractor for checkbox tasks and GTD metadata
+- [x] 2.1 Write tests for TaskExtractor with Obsidian Tasks format
+- [x] 2.2 Implement TaskExtractor for checkbox tasks and GTD metadata
 - [ ] 2.3 Write tests for context detection and project links
 - [ ] 2.4 Write tests for LinkExtractor with markdown links and wikilinks
 - [ ] 2.5 Implement LinkExtractor class in parsers/link_extractor.py
