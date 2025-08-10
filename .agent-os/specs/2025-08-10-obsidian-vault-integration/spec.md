@@ -2,7 +2,7 @@
 
 ## Overview
 
-This feature implements the foundational MCP server capability to read and parse Obsidian markdown files within a GTD workflow structure. The server will accept a vault path configuration, read markdown files from the `gtd/` folder, parse YAML frontmatter for GTD-specific properties, and process standard markdown links.
+This feature implements the foundational MCP server capability to read and parse Obsidian markdown files organized according to the Getting Things Done (GTD) methodology. The server will accept a vault path configuration, read markdown files from the standardized `gtd/` folder structure, parse tasks using the Obsidian Tasks plugin format with GTD-specific metadata, extract project frontmatter, and process both standard markdown links and wikilinks to understand the relationships between projects, actions, and contexts.
 
 ## User Stories
 
@@ -25,17 +25,27 @@ This feature implements the foundational MCP server capability to read and parse
 ### In Scope
 
 1. **Vault Path Configuration**: Accept vault path as a configuration parameter
-2. **GTD Folder Processing**: Read markdown files specifically from `{vault_path}/gtd/` directory
-3. **Frontmatter Parsing**: Parse YAML frontmatter with GTD-specific properties:
-   - `status` (active, completed, someday, waiting, etc.)
-   - `context` (location or tool-based contexts like @home, @computer)
-   - `priority` (high, medium, low, or numeric)
-   - `due_date` (ISO date format)
-   - `project` (parent project reference)
-   - `tags` (GTD categories and custom tags)
-4. **Standard Markdown Link Processing**: Parse and extract both internal `[text](path)` and external `[text](url)` links
-5. **Basic MCP Tools**: Expose fundamental file reading capabilities through MCP protocol
-6. **Data Structure Optimization**: Return parsed data in an optimal structure for AI consumption
+2. **GTD Folder Structure**: Read from standardized GTD organization:
+   - `inbox.md` - Capture area for new items
+   - `projects.md` - Active projects with outcomes
+   - `next-actions.md` - Context-organized actionable tasks
+   - `waiting-for.md` - Delegated items
+   - `someday-maybe.md` - Future possibilities
+   - `contexts/` - Context-specific files (@calls, @computer, @errands)
+3. **Obsidian Tasks Plugin Support**: Parse checkbox tasks with inline metadata:
+   - Task completion status (`[ ]` vs `[x]`)
+   - GTD contexts (@home, @office, @calls)
+   - Project links via wikilinks (`[[Project Name]]`)
+   - Priority, energy, time estimates via emojis
+   - Dates (due, scheduled, start, done)
+   - Delegation info for waiting-for items
+4. **Project Frontmatter**: Parse YAML frontmatter for project metadata:
+   - Desired outcomes
+   - Project status and area
+   - Review and completion dates
+5. **Link Processing**: Extract both markdown links and wikilinks
+6. **Basic MCP Tools**: Expose file reading capabilities through MCP protocol
+7. **Data Structure Optimization**: Return GTD-aligned structured data for AI consumption
 
 ### Out of Scope
 
