@@ -22,10 +22,10 @@
 - [x] 2.8 Verify all parser tests pass
 
 ### 3. Create vault reading service
-- [ ] 3.1 Write tests for VaultReader with GTD folder structure
-- [ ] 3.2 Implement VaultReader class with file type detection
-- [ ] 3.3 Test inbox, projects, next-actions, waiting-for, someday files
-- [ ] 3.4 Test contexts folder with @calls, @computer, @errands files
+- [x] 3.1 Write tests for VaultReader with GTD folder structure
+- [x] 3.2 Implement VaultReader class with file type detection
+- [x] 3.3 Test inbox, projects, next-actions, waiting-for, someday files
+- [x] 3.4 Test contexts folder with @calls, @computer, @errands files
 - [ ] 3.5 Create GTD test fixtures in tests/fixtures/sample_vault/gtd/
 - [ ] 3.6 Test integration of all parser components with VaultReader
 - [ ] 3.7 Verify all service tests pass
