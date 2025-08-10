@@ -14,12 +14,12 @@
 ### 2. Implement parsing components
 - [x] 2.1 Write tests for TaskExtractor with Obsidian Tasks format
 - [x] 2.2 Implement TaskExtractor for checkbox tasks and GTD metadata
-- [ ] 2.3 Write tests for context detection and project links
-- [ ] 2.4 Write tests for LinkExtractor with markdown links and wikilinks
-- [ ] 2.5 Implement LinkExtractor class in parsers/link_extractor.py
-- [ ] 2.6 Write tests for MarkdownParser frontmatter extraction
-- [ ] 2.7 Implement MarkdownParser class in parsers/markdown_parser.py
-- [ ] 2.8 Verify all parser tests pass
+- [x] 2.3 Write tests for context detection and project links
+- [x] 2.4 Write tests for LinkExtractor with markdown links and wikilinks
+- [x] 2.5 Implement LinkExtractor class in parsers/link_extractor.py
+- [x] 2.6 Write tests for MarkdownParser frontmatter extraction
+- [x] 2.7 Implement MarkdownParser class in parsers/markdown_parser.py
+- [x] 2.8 Verify all parser tests pass
 
 ### 3. Create vault reading service
 - [ ] 3.1 Write tests for VaultReader with GTD folder structure
