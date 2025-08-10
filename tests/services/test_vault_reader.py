@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-import pytest  # type: ignore[import-not-found]
+import pytest
 
 from md_gtd_mcp.models import VaultConfig
 from md_gtd_mcp.services.vault_reader import VaultReader

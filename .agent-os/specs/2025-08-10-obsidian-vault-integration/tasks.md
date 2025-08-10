@@ -26,9 +26,9 @@
 - [x] 3.2 Implement VaultReader class with file type detection
 - [x] 3.3 Test inbox, projects, next-actions, waiting-for, someday files
 - [x] 3.4 Test contexts folder with @calls, @computer, @errands files
-- [ ] 3.5 Create GTD test fixtures in tests/fixtures/sample_vault/gtd/
-- [ ] 3.6 Test integration of all parser components with VaultReader
-- [ ] 3.7 Verify all service tests pass
+- [x] 3.5 Create GTD test fixtures in tests/fixtures/sample_vault/gtd/
+- [x] 3.6 Test integration of all parser components with VaultReader
+- [x] 3.7 Verify all service tests pass
 
 ### 4. Implement MCP tools interface
 - [ ] 4.1 Write tests for MCP tool responses and JSON structure
