@@ -67,11 +67,11 @@
   - Create vault with some existing GTD files containing user data
   - Run setup_gtd_vault and verify it preserves existing content
   - Confirm new files are created only where missing
-- [ ] 5.3 Test daily inbox processing workflow - Reading and categorizing captured items
+- [x] 5.3 Test daily inbox processing workflow - Reading and categorizing captured items
   - Read inbox file with mixed processed/unprocessed items
   - Verify task extraction distinguishes actionable items
   - Validate proper categorization suggestions in response
-- [ ] 5.4 Test weekly review workflow - Complete system overview and statistics
+- [x] 5.4 Test weekly review workflow - Complete system overview and statistics
   - Call read_gtd_files for full vault content
   - Verify aggregation of tasks by context and project
   - Validate identification of completed vs pending items

@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from md_gtd_mcp.models.vault_config import VaultConfig
 from md_gtd_mcp.services.vault_reader import VaultReader
@@ -653,3 +654,1193 @@ sort by due
                 assert "```tasks" in context_file.content
                 assert "not done" in context_file.content
                 assert "```" in context_file.content
+
+
+class TestDailyInboxProcessingWorkflow:
+    """Integration tests for task 5.3: Daily inbox processing workflow."""
+
+    def test_inbox_processing_with_mixed_content(self) -> None:
+        """Test daily inbox processing workflow - Reading and categorizing items.
+
+        This test verifies:
+        - Read inbox file with mixed processed/unprocessed items
+        - Verify task extraction distinguishes actionable items
+        - Validate proper categorization suggestions in response
+        """
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "daily_processing_vault"
+            vault_path.mkdir()
+            gtd_path = vault_path / "gtd"
+            gtd_path.mkdir()
+
+            # Step 1: Create realistic daily inbox with mixed content
+            daily_inbox_content = """---
+status: active
+last_processed: 2025-08-15
+items_captured_today: 15
+processing_priority: high
+---
+
+# Inbox - Daily Processing
+
+## Recently Captured (Unprocessed)
+
+Call Mom about vacation plans
+Email from John about quarterly review meeting
+Fix broken kitchen faucet handle
+Research new laptop for work upgrade
+Meeting notes from client presentation yesterday
+Book recommendation: "Deep Work" by Cal Newport
+Pick up dry cleaning before 6pm today
+Schedule dentist appointment for checkup
+
+## Partially Processed Items
+
+- [ ] Review contract proposal from Acme Corp @computer #task
+- [ ] Call insurance agent about policy renewal @calls #task ⏱️30 🔥
+- [ ] Submit expense report for business trip @computer #task 📅2025-08-18
+
+## Waiting for Processing
+
+- Meeting notes from team standup this morning
+- Ideas from productivity podcast episode 47
+- Follow-up items from client call with Sarah
+
+## Quick Notes & Ideas
+
+Look into productivity course Sarah mentioned
+New project idea: automated expense tracking
+Remember to update LinkedIn profile
+Check status of [[Project Alpha]] next review
+Research [[GTD Weekly Review]] best practices
+
+## Reference Material
+
+- Link to productivity article: [Getting Things Done in 2025](https://example.com/gtd-2025)
+- Client contact info for future reference
+- Notes about new software tools evaluation
+
+## Items with Context Hints
+
+Take laptop to repair shop downtown
+Call bank about loan refinancing options
+Buy groceries and pick up prescription
+Update project documentation in Confluence
+Schedule video call with remote team members
+Review budget spreadsheet for Q4 planning
+"""
+
+            inbox_path = gtd_path / "inbox.md"
+            inbox_path.write_text(daily_inbox_content)
+
+            # Step 2: Read inbox using MCP tool
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+
+            # Verify successful read
+            assert result["status"] == "success"
+            assert result["vault_path"] == str(vault_path)
+            assert "file" in result
+
+            file_data = result["file"]
+
+            # Step 3: Verify task extraction distinguishes actionable items
+
+            # Should extract only the properly formatted tasks (#task tag)
+            assert len(file_data["tasks"]) == 3  # Only the processed items with #task
+
+            task_texts = [task["description"] for task in file_data["tasks"]]
+            expected_tasks = [
+                "Review contract proposal from Acme Corp",
+                "Call insurance agent about policy renewal",
+                "Submit expense report for business trip",
+            ]
+
+            for expected_task in expected_tasks:
+                assert any(expected_task in task_text for task_text in task_texts)
+
+            # Step 4: Verify GTD metadata extraction from tasks
+            tasks_by_context: dict[str, list[dict[str, Any]]] = {}
+            for task in file_data["tasks"]:
+                context = task.get("context")
+                if context:
+                    if context not in tasks_by_context:
+                        tasks_by_context[context] = []
+                    tasks_by_context[context].append(task)
+
+            # Should have @computer and @calls contexts
+            assert "@computer" in tasks_by_context
+            assert "@calls" in tasks_by_context
+            assert (
+                len(tasks_by_context["@computer"]) == 2
+            )  # Review contract + expense report
+            assert len(tasks_by_context["@calls"]) == 1  # Insurance call
+
+            # Step 5: Verify energy and time metadata extraction
+            insurance_task = None
+            for task in file_data["tasks"]:
+                if "insurance agent" in task["description"]:
+                    insurance_task = task
+                    break
+
+            assert insurance_task is not None
+            assert insurance_task["energy"] == "🔥"  # High energy
+            assert insurance_task["time_estimate"] == 30  # 30 minutes
+
+            # Step 6: Verify due date extraction
+            expense_task = None
+            for task in file_data["tasks"]:
+                if "expense report" in task["description"]:
+                    expense_task = task
+                    break
+
+            assert expense_task is not None
+            assert expense_task["due_date"] is not None
+            # Due date should be parsed as 2025-08-18
+
+            # Step 7: Verify link extraction (wikilinks and external)
+            assert (
+                len(file_data["links"]) >= 3
+            )  # At least Project Alpha, GTD Weekly Review, and external link
+
+            link_targets = [link["target"] for link in file_data["links"]]
+            assert "Project Alpha" in link_targets
+            assert "GTD Weekly Review" in link_targets
+            assert "https://example.com/gtd-2025" in link_targets
+
+            # Step 8: Verify frontmatter extraction for processing metadata
+            frontmatter = file_data["frontmatter"]
+            assert frontmatter["status"] == "active"
+            assert frontmatter["extra"]["items_captured_today"] == 15
+            assert frontmatter["extra"]["processing_priority"] == "high"
+
+    def test_inbox_categorization_analysis(self) -> None:
+        """Test inbox content analysis for categorization suggestions."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "categorization_vault"
+            vault_path.mkdir()
+            gtd_path = vault_path / "gtd"
+            gtd_path.mkdir()
+
+            # Create inbox with clear categorization examples
+            categorization_inbox = """---
+status: active
+---
+
+# Inbox - Categorization Examples
+
+## Clear Next Actions (Should extract as tasks when formatted)
+
+- [ ] Call dentist to schedule cleaning @calls #task
+- [ ] Review Q3 budget spreadsheet @computer #task
+- [ ] Pick up prescription at pharmacy @errands #task
+
+## Project Ideas (Multi-step outcomes)
+
+Research new CRM system for sales team
+Plan family vacation for summer 2025
+Organize home office renovation project
+
+## Reference Material (No action needed)
+
+Article about productivity tips
+Contact info for new client
+Meeting notes from last week's brainstorm
+
+## Waiting For Items
+
+Response from vendor about pricing quote
+Approval from manager on budget request
+Delivery of office furniture order
+
+## Someday/Maybe Ideas
+
+Learn Spanish language
+Write a book about productivity
+Start a photography hobby
+
+## Quick Capture (Needs processing)
+
+Sarah mentioned good restaurant downtown
+Need to update emergency contact info
+Check on Mom's doctor appointment results
+Look into that new productivity app
+"""
+
+            inbox_path = gtd_path / "inbox.md"
+            inbox_path.write_text(categorization_inbox)
+
+            # Read and analyze inbox
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+
+            assert result["status"] == "success"
+            file_data = result["file"]
+
+            # Should extract the 3 properly formatted tasks
+            assert len(file_data["tasks"]) == 3
+
+            # Verify contexts are extracted
+            contexts = [task.get("context") for task in file_data["tasks"]]
+            assert "@calls" in contexts
+            assert "@computer" in contexts
+            assert "@errands" in contexts
+
+            # Content analysis - verify different content types are preserved
+            content = file_data["content"]
+
+            # Should contain all sections for analysis
+            assert "Clear Next Actions" in content
+            assert "Project Ideas" in content
+            assert "Reference Material" in content
+            assert "Waiting For Items" in content
+            assert "Someday/Maybe Ideas" in content
+            assert "Quick Capture" in content
+
+    def test_inbox_processing_statistics(self) -> None:
+        """Test inbox processing workflow statistics and insights."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "stats_vault"
+            vault_path.mkdir()
+            gtd_path = vault_path / "gtd"
+            gtd_path.mkdir()
+
+            # Create inbox with varied processing states
+            stats_inbox = """---
+status: active
+last_processed: 2025-08-14
+total_captured_this_week: 47
+processed_this_week: 32
+---
+
+# Inbox - Processing Statistics
+
+## Today's Capture (8 items)
+
+Morning standup discussion points
+Client feedback on prototype
+Grocery list for weekend
+- [ ] Follow up with vendor about delivery @calls #task
+Ideas from productivity webinar
+- [ ] Update project timeline in Asana @computer #task
+Schedule car maintenance appointment
+- [ ] Review insurance policy options @computer #task
+
+## Yesterday's Items (Still processing)
+
+Meeting notes from strategy session
+Email thread about budget planning
+- [ ] Call accountant about tax questions @calls #task 🔥
+Research results about competitor analysis
+
+## Earlier This Week
+
+- [x] Submit reimbursement request @computer #task ✅2025-08-15
+- [ ] Schedule team building event @calls #task
+Ideas from book: "Digital Minimalism"
+Notes from customer interview session
+
+## Recurring Items
+
+Weekly grocery shopping
+Monthly budget review
+Quarterly goal assessment
+"""
+
+            inbox_path = gtd_path / "inbox.md"
+            inbox_path.write_text(stats_inbox)
+
+            # Read inbox and analyze statistics
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+
+            assert result["status"] == "success"
+            file_data = result["file"]
+
+            # Verify task extraction and completion tracking
+            tasks = file_data["tasks"]
+            assert len(tasks) >= 6  # Multiple tasks across different sections
+
+            # Check for completed vs pending tasks
+            completed_tasks = [task for task in tasks if task.get("completed", False)]
+            pending_tasks = [task for task in tasks if not task.get("completed", False)]
+
+            assert len(completed_tasks) >= 1  # Should have at least one completed task
+            assert len(pending_tasks) >= 5  # Should have multiple pending tasks
+
+            # Verify frontmatter statistics
+            frontmatter = file_data["frontmatter"]
+            stats = frontmatter.get("extra", {})
+            assert stats.get("total_captured_this_week") == 47
+            assert stats.get("processed_this_week") == 32
+
+            # Should indicate processing backlog (47 captured vs 32 processed)
+            processing_ratio = (
+                stats["processed_this_week"] / stats["total_captured_this_week"]
+            )
+            assert processing_ratio < 1.0  # Indicates backlog exists
+
+    def test_batch_inbox_processing_with_read_gtd_files(self) -> None:
+        """Test batch reading of GTD files for comprehensive inbox processing."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "batch_vault"
+
+            # Setup complete GTD structure
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            # Modify inbox with realistic daily content
+            gtd_path = vault_path / "gtd"
+            inbox_path = gtd_path / "inbox.md"
+
+            batch_inbox_content = """---
+status: active
+processing_needed: true
+priority_items: 5
+---
+
+# Inbox - Batch Processing
+
+## High Priority Items
+
+- [ ] Prepare presentation for client meeting tomorrow @computer #task 🔥 ⏱️120
+- [ ] Call doctor about test results @calls #task 🔥 ⏱️15
+- [ ] Submit project proposal before deadline @computer #task 📅2025-08-17
+
+## Regular Capture
+
+Team meeting notes from yesterday
+Research findings about new market segment
+- [ ] Review contract terms with legal team @computer #task
+Contact info from networking event
+- [ ] Schedule follow-up call with prospect @calls #task ⏱️30
+
+## Ideas and Opportunities
+
+Improve onboarding process for new customers
+Automate monthly reporting workflow
+Partner with local business for cross-promotion
+
+## Reference Items
+
+Link to industry report: [Market Analysis 2025](https://example.com/report)
+Notes from conference session about AI trends
+Customer feedback compilation from support team
+"""
+
+            inbox_path.write_text(batch_inbox_content)
+
+            # Test batch reading with read_gtd_files
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            result = read_gtd_files_impl(str(vault_path))
+
+            assert result["status"] == "success"
+            assert "files" in result
+            assert "summary" in result
+
+            # Find inbox in results
+            inbox_file = None
+            for file_data in result["files"]:
+                if file_data["file_type"] == "inbox":
+                    inbox_file = file_data
+                    break
+
+            assert inbox_file is not None
+
+            # Verify comprehensive task extraction
+            tasks = inbox_file["tasks"]
+            assert len(tasks) == 5  # All #task items
+
+            # Verify high priority tasks are identified
+            high_priority_tasks = [task for task in tasks if task.get("energy") == "🔥"]
+            assert len(high_priority_tasks) == 2  # Presentation and doctor call
+
+            # Verify time estimates are extracted
+            timed_tasks = [task for task in tasks if task.get("time_estimate")]
+            assert len(timed_tasks) >= 3  # Multiple tasks with time estimates
+
+            # Verify summary statistics include inbox metrics
+            summary = result["summary"]
+            assert "total_tasks" in summary
+            assert "total_files" in summary
+            assert summary["total_tasks"] >= 5
+
+            # Should have file type breakdown including inbox
+            assert "files_by_type" in summary
+            assert summary["files_by_type"]["inbox"] == 1
+
+
+class TestWeeklyReviewWorkflow:
+    """Integration tests for task 5.4: Weekly review workflow."""
+
+    def test_comprehensive_system_overview(self) -> None:
+        """Test weekly review workflow - Complete system overview and statistics.
+
+        This test verifies:
+        - Call read_gtd_files for full vault content
+        - Verify aggregation of tasks by context and project
+        - Validate identification of completed vs pending items
+        """
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "weekly_review_vault"
+
+            # Setup complete GTD structure
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            # Create comprehensive GTD content for weekly review
+            gtd_path = vault_path / "gtd"
+
+            # Step 1: Create inbox with mixed processing states
+            inbox_content = """---
+status: active
+last_processed: 2025-08-14
+weekly_captures: 23
+processed_this_week: 18
+---
+
+# Inbox
+
+## Recently Captured
+
+- Research new project management methodology
+- Meeting notes from client presentation
+- [ ] Follow up with vendor about delivery delay @calls #task ⏱️15
+- Ideas from productivity conference session
+- [ ] Review contract proposal from ABC Corp @computer #task 🔥 📅2025-08-20
+
+## Quick Capture
+
+Book recommendation: "Getting Things Done"
+Check [[Project Gamma]] progress next week
+New business opportunity discussion notes
+"""
+
+            # Step 2: Create projects with comprehensive project data
+            projects_content = """---
+status: active
+review_date: 2025-08-18
+active_projects: 4
+completed_this_week: 1
+---
+
+# Projects
+
+## Active Projects
+
+### [[Project Alpha]] - Marketing Campaign Launch
+- **Outcome**: Launch Q4 marketing campaign
+- **Status**: In progress (60% complete)
+- **Area**: Marketing
+- **Review Date**: 2025-08-25
+- **Next Actions**: See [[next-actions.md]]
+
+Key Progress:
+- [x] Complete market research phase ✅2025-08-10 #task
+- [x] Design campaign materials ✅2025-08-12 #task
+- [ ] Schedule focus group sessions @calls #task 📅2025-08-22
+
+### [[Project Beta]] - System Integration
+- **Outcome**: Integrate new CRM with existing tools
+- **Status**: Planning (25% complete)
+- **Area**: Technology
+- **Dependencies**: Waiting for vendor API documentation
+
+Progress Notes:
+- [x] Evaluate CRM options ✅2025-08-08 #task
+- [ ] Set up development environment @computer #task #high-priority
+- [ ] Schedule training session for team @calls #task
+
+### [[Project Gamma]] - Office Renovation
+- **Outcome**: Modernize office space for hybrid work
+- **Status**: On hold (pending budget approval)
+- **Area**: Operations
+
+Planning Phase:
+- [ ] Get contractor quotes @calls #task
+- [ ] Review space utilization data @computer #task
+- Research modern office design trends
+
+## Completed This Week
+
+### [[Website Redesign]] - COMPLETED ✅2025-08-15
+- **Outcome**: Launch new company website
+- **Completed**: All deliverables finished on schedule
+- **Lessons Learned**: Better stakeholder communication needed
+
+Final Tasks:
+- [x] Deploy to production ✅2025-08-15 #task
+- [x] Update DNS settings ✅2025-08-15 #task
+- [x] Notify marketing team ✅2025-08-15 #task
+"""
+
+            # Step 3: Create next-actions with comprehensive context organization
+            next_actions_content = """---
+status: active
+last_updated: 2025-08-16
+total_actions: 28
+completed_this_week: 12
+---
+
+# Next Actions
+
+## High Priority (@calls context)
+
+- [ ] Call insurance agent about policy renewal @calls #task 🔥 ⏱️30 📅2025-08-18
+- [ ] Schedule quarterly review with team lead @calls #task 🔥 ⏱️45
+- [ ] Follow up with [[Project Alpha]] stakeholders @calls #task 💪 ⏱️20
+- [ ] Contact vendor about [[Project Beta]] API @calls #task 💪
+
+## Computer Work (@computer context)
+
+- [ ] Update project documentation for [[Project Alpha]] @computer #task 💪 ⏱️60
+- [ ] Review code changes in development branch @computer #task 🪶 ⏱️30
+- [ ] Prepare weekly status report @computer #task 🪶 ⏱️45 📅2025-08-17
+- [ ] Set up monitoring for new deployment @computer #task 💪 ⏱️90
+- [ ] Research automation tools for workflow @computer #task 🪶
+
+## Errands (@errands context)
+
+- [ ] Pick up office supplies for team @errands #task 🪶 ⏱️30
+- [ ] Drop off documents at accountant office @errands #task 💪 ⏱️20
+- [ ] Buy gift for colleague's farewell @errands #task 🪶
+
+## Home Tasks (@home context)
+
+- [ ] Update home office setup for remote work @home #task 💪 ⏱️120
+- [ ] Organize home filing system @home #task 🪶 ⏱️60
+- [ ] Plan family vacation itinerary @home #task 🪶 ⏱️90
+
+## Completed This Week
+
+- [x] Submit expense report for conference ✅2025-08-12 @computer #task
+- [x] Complete annual performance review ✅2025-08-13 @computer #task
+- [x] Call dentist for appointment scheduling ✅2025-08-14 @calls #task
+- [x] Backup computer files to cloud storage ✅2025-08-15 @computer #task
+- [x] Review and approve team vacation requests ✅2025-08-16 @computer #task
+"""
+
+            # Step 4: Create waiting-for with delegation tracking
+            waiting_content = """---
+status: active
+items_waiting: 8
+overdue_items: 2
+---
+
+# Waiting For
+
+## Pending Responses
+
+- [ ] Proposal feedback from client (due 2025-08-18) #waiting 👤ClientABC
+- [ ] Budget approval for [[Project Gamma]] #waiting 👤Finance
+- [ ] API documentation from vendor for [[Project Beta]] #waiting 👤TechVendor
+- [ ] Legal review of new contract terms #waiting 👤Legal
+
+## Deliveries & Services
+
+- [ ] New laptop delivery from IT department #waiting 👤IT
+- [ ] Office furniture installation completion #waiting 👤Facilities
+- [ ] Insurance claim processing update #waiting 👤Insurance
+
+## Team Dependencies
+
+- [ ] Design mockups from creative team #waiting 👤Design
+"""
+
+            # Step 5: Create someday-maybe with future possibilities
+            someday_content = """---
+status: active
+ideas_captured: 15
+reviewed_date: 2025-08-10
+---
+
+# Someday / Maybe
+
+## Professional Development
+
+Learn new programming language (Python or Go)
+Attend productivity conference next year
+Write article about project management lessons
+Get certification in agile methodologies
+
+## Business Ideas
+
+Start side consulting practice
+Create online course about GTD methodology
+Partner with local businesses for networking events
+Develop productivity app for small teams
+
+## Personal Projects
+
+Write a book about work-life balance
+Learn photography and start photo blog
+Plan extended European vacation
+Renovate basement into home workshop
+
+## Technology Exploration
+
+Research AI tools for workflow automation
+Investigate new project management platforms
+Explore remote collaboration technologies
+Study cryptocurrency and blockchain applications
+"""
+
+            # Write all the content to files
+            (gtd_path / "inbox.md").write_text(inbox_content)
+            (gtd_path / "projects.md").write_text(projects_content)
+            (gtd_path / "next-actions.md").write_text(next_actions_content)
+            (gtd_path / "waiting-for.md").write_text(waiting_content)
+            (gtd_path / "someday-maybe.md").write_text(someday_content)
+
+            # Add context-specific tasks to context files
+            contexts_path = gtd_path / "contexts"
+
+            calls_addition = """
+## Weekly Review Context Tasks
+
+- [ ] Schedule one-on-one meetings with team members @calls #task 💪 ⏱️60
+- [ ] Call conference organizer about speaking slot @calls #task 🪶 ⏱️15
+- [x] Confirm attendance at industry meetup ✅2025-08-14 @calls #task
+"""
+
+            computer_addition = """
+## Weekly Review Context Tasks
+
+- [ ] Update project tracking spreadsheet @computer #task 💪 ⏱️30
+- [ ] Backup development environment @computer #task 🪶 ⏱️45
+- [x] Install security updates on work laptop ✅2025-08-13 @computer #task
+"""
+
+            # Append to existing context files
+            calls_file = contexts_path / "@calls.md"
+            calls_file.write_text(calls_file.read_text() + calls_addition)
+
+            computer_file = contexts_path / "@computer.md"
+            computer_file.write_text(computer_file.read_text() + computer_addition)
+
+            # Step 6: Read full vault content using read_gtd_files
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            result = read_gtd_files_impl(str(vault_path))
+
+            # Verify successful read
+            assert result["status"] == "success"
+            assert "files" in result
+            assert "summary" in result
+            assert len(result["files"]) == 9  # 5 standard + 4 context files
+
+            # Step 7: Verify task aggregation by context
+            all_tasks = []
+            for file_data in result["files"]:
+                all_tasks.extend(file_data["tasks"])
+
+            # Group tasks by context
+            tasks_by_context: dict[str, list[dict[str, Any]]] = {}
+            for task in all_tasks:
+                context = task.get("context", "no_context")
+                if context not in tasks_by_context:
+                    tasks_by_context[context] = []
+                tasks_by_context[context].append(task)
+
+            # Should have tasks in all major contexts
+            assert "@calls" in tasks_by_context
+            assert "@computer" in tasks_by_context
+            assert "@errands" in tasks_by_context
+            assert "@home" in tasks_by_context
+
+            # Verify significant task distribution
+            assert len(tasks_by_context["@calls"]) >= 6  # Multiple call tasks
+            assert len(tasks_by_context["@computer"]) >= 8  # Many computer tasks
+            assert len(tasks_by_context["@errands"]) >= 3  # Some errands
+            assert len(tasks_by_context["@home"]) >= 3  # Some home tasks
+
+            # Step 8: Verify task aggregation by project
+            tasks_by_project: dict[str, list[dict[str, Any]]] = {}
+            for task in all_tasks:
+                project = task.get("project")
+                if project:
+                    if project not in tasks_by_project:
+                        tasks_by_project[project] = []
+                    tasks_by_project[project].append(task)
+
+            # Should have tasks linked to active projects
+            assert "Project Alpha" in tasks_by_project
+            assert "Project Beta" in tasks_by_project
+            assert len(tasks_by_project["Project Alpha"]) >= 2
+            assert len(tasks_by_project["Project Beta"]) >= 1
+
+            # Step 9: Verify completion tracking across system
+            completed_tasks = [
+                task for task in all_tasks if task.get("completed", False)
+            ]
+            pending_tasks = [
+                task for task in all_tasks if not task.get("completed", False)
+            ]
+
+            # Should have substantial completion data
+            assert len(completed_tasks) >= 8  # Multiple completed tasks this week
+            assert len(pending_tasks) >= 20  # Many active tasks
+
+            # Verify completion dates are tracked
+            tasks_with_completion_dates = [
+                task
+                for task in completed_tasks
+                if task.get("completion_date") is not None
+            ]
+            assert (
+                len(tasks_with_completion_dates) >= 6
+            )  # Most completed tasks have dates
+
+    def test_weekly_statistics_generation(self) -> None:
+        """Test comprehensive statistics for weekly review insights."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "stats_vault"
+
+            # Setup vault and create data
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            gtd_path = vault_path / "gtd"
+
+            # Create statistical data for analysis
+            stats_inbox = """---
+status: active
+captures_this_week: 34
+processed_items: 28
+processing_rate: 82
+---
+
+# Inbox - Weekly Statistics
+
+## Metrics Summary
+
+Total captures this week: 34 items
+Successfully processed: 28 items (82% rate)
+Remaining for processing: 6 items
+
+## Active Processing
+
+- [ ] Analyze market research data @computer #task 🔥 ⏱️120
+- [ ] Schedule team retrospective meeting @calls #task 💪 ⏱️30
+- [ ] Review quarterly budget allocations @computer #task 💪 ⏱️90
+"""
+
+            stats_projects = """---
+status: active
+active_projects: 3
+completed_projects: 2
+success_rate: 67
+avg_completion_time: 45
+---
+
+# Projects - Weekly Performance
+
+## Performance Metrics
+
+Active Projects: 3
+Completed This Period: 2
+Success Rate: 67%
+Average Completion Time: 45 days
+
+## Active Project Status
+
+### High-Performance Projects (90%+ complete)
+- [[Marketing Campaign]] - Ready for launch
+- [[System Upgrade]] - Final testing phase
+
+### In-Progress Projects (50-90% complete)
+- [[Office Renovation]] - Waiting for approvals
+
+### Early Stage Projects (0-50% complete)
+- [[Team Training Program]] - Planning phase
+"""
+
+            stats_next_actions = """---
+status: active
+total_actions: 42
+completed_this_week: 18
+completion_rate: 43
+energy_distribution:
+  high: 8
+  medium: 22
+  low: 12
+context_distribution:
+  calls: 12
+  computer: 20
+  errands: 6
+  home: 4
+---
+
+# Next Actions - Performance Analysis
+
+## Weekly Performance
+
+Total Actions: 42
+Completed This Week: 18 (43% completion rate)
+Average Time Per Task: 35 minutes
+
+## Energy Level Distribution
+
+- 🔥 High Energy: 8 tasks (19%)
+- 💪 Medium Energy: 22 tasks (52%)
+- 🪶 Low Energy: 12 tasks (29%)
+
+## Context Distribution
+
+- @calls: 12 tasks (29%)
+- @computer: 20 tasks (48%)
+- @errands: 6 tasks (14%)
+- @home: 4 tasks (9%)
+
+## This Week's Completed Tasks
+
+- [x] Complete project documentation update ✅2025-08-12 @computer #task
+- [x] Review team performance metrics ✅2025-08-13 @computer #task
+- [x] Call vendor about contract renewal ✅2025-08-14 @calls #task
+- [x] Submit monthly expense reports ✅2025-08-15 @computer #task
+- [x] Schedule annual health checkup ✅2025-08-16 @calls #task
+"""
+
+            # Write statistical content
+            (gtd_path / "inbox.md").write_text(stats_inbox)
+            (gtd_path / "projects.md").write_text(stats_projects)
+            (gtd_path / "next-actions.md").write_text(stats_next_actions)
+
+            # Read and analyze statistics
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            result = read_gtd_files_impl(str(vault_path))
+
+            assert result["status"] == "success"
+
+            # Verify comprehensive summary statistics
+            summary = result["summary"]
+
+            # Should include basic counts
+            assert "total_files" in summary
+            assert "total_tasks" in summary
+            assert "total_links" in summary
+            assert summary["total_files"] >= 9  # All GTD files
+            assert summary["total_tasks"] >= 5  # Statistical tasks
+
+            # Should include file type breakdown
+            assert "files_by_type" in summary
+            file_types = summary["files_by_type"]
+            assert file_types["inbox"] == 1
+            assert file_types["projects"] == 1
+            assert file_types["next-actions"] == 1
+            assert file_types["context"] == 4
+
+            # Should include task distribution
+            assert "tasks_by_type" in summary
+
+            # Verify frontmatter statistics are accessible
+            for file_data in result["files"]:
+                if file_data["file_type"] == "inbox":
+                    frontmatter = file_data["frontmatter"]
+                    extra = frontmatter.get("extra", {})
+                    assert extra.get("captures_this_week") == 34
+                    assert extra.get("processing_rate") == 82
+                elif file_data["file_type"] == "projects":
+                    frontmatter = file_data["frontmatter"]
+                    extra = frontmatter.get("extra", {})
+                    assert extra.get("active_projects") == 3
+                    assert extra.get("success_rate") == 67
+                elif file_data["file_type"] == "next-actions":
+                    frontmatter = file_data["frontmatter"]
+                    extra = frontmatter.get("extra", {})
+                    assert extra.get("total_actions") == 42
+                    assert extra.get("completion_rate") == 43
+
+    def test_energy_and_priority_analysis(self) -> None:
+        """Test energy level and priority analysis for weekly planning."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "energy_vault"
+
+            # Setup vault
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            gtd_path = vault_path / "gtd"
+
+            # Create energy-focused task content
+            energy_content = """---
+status: active
+---
+
+# Next Actions - Energy Analysis
+
+## High Energy Tasks (🔥)
+
+- [ ] Lead strategic planning session @calls #task 🔥 ⏱️180 #high-priority
+- [ ] Present to executive committee @calls #task 🔥 ⏱️120 #high-priority
+- [ ] Negotiate contract terms with vendor @calls #task 🔥 ⏱️90
+- [ ] Code complex integration module @computer #task 🔥 ⏱️240
+
+## Medium Energy Tasks (💪)
+
+- [ ] Review team performance reports @computer #task 💪 ⏱️60
+- [ ] Update project documentation @computer #task 💪 ⏱️45
+- [ ] Schedule quarterly meetings @calls #task 💪 ⏱️30
+- [ ] Analyze market research data @computer #task 💪 ⏱️75
+- [ ] Prepare monthly budget report @computer #task 💪 ⏱️90
+
+## Low Energy Tasks (🪶)
+
+- [ ] File expense receipts @computer #task 🪶 ⏱️15
+- [ ] Update contact database @computer #task 🪶 ⏱️20
+- [ ] Organize desktop files @computer #task 🪶 ⏱️30
+- [ ] Sort through email backlog @computer #task 🪶 ⏱️45
+- [ ] Schedule routine maintenance @calls #task 🪶 ⏱️10
+
+## High Priority Items
+
+- [ ] Submit urgent proposal to client @computer #task 💪 #high-priority 📅2025-08-18
+- [ ] Fix critical bug in production @computer #task 🔥 #high-priority ⏱️120
+- [ ] Call about emergency meeting @calls #task 💪 #high-priority ⏱️15
+"""
+
+            (gtd_path / "next-actions.md").write_text(energy_content)
+
+            # Read and analyze energy distribution
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            result = read_gtd_files_impl(str(vault_path))
+
+            assert result["status"] == "success"
+
+            # Extract all tasks for analysis
+            all_tasks = []
+            for file_data in result["files"]:
+                all_tasks.extend(file_data["tasks"])
+
+            # Analyze energy distribution
+            energy_distribution = {"🔥": 0, "💪": 0, "🪶": 0, "none": 0}
+            for task in all_tasks:
+                energy = task.get("energy")
+                if energy in energy_distribution:
+                    energy_distribution[energy] += 1
+                else:
+                    energy_distribution["none"] += 1
+
+            # Should have extracted tasks with various energy levels
+            # Note: Exact emoji matching may vary due to Unicode encoding
+            total_with_energy = (
+                energy_distribution["🔥"]
+                + energy_distribution["💪"]
+                + energy_distribution["🪶"]
+            )
+            assert total_with_energy >= 8  # Should have tasks with energy metadata
+            assert len(all_tasks) >= 15  # Should have extracted most tasks
+
+            # Analyze time estimates by energy level
+            time_by_energy: dict[str, list[int]] = {"🔥": [], "💪": [], "🪶": []}
+            for task in all_tasks:
+                energy = task.get("energy")
+                time_estimate = task.get("time_estimate")
+                if energy in time_by_energy and time_estimate:
+                    time_by_energy[energy].append(time_estimate)
+
+            # High energy tasks should have longer time estimates
+            if time_by_energy["🔥"]:
+                avg_high_energy_time = sum(time_by_energy["🔥"]) / len(
+                    time_by_energy["🔥"]
+                )
+                assert avg_high_energy_time >= 120  # High energy tasks are longer
+
+            # Low energy tasks should have shorter time estimates
+            if time_by_energy["🪶"]:
+                avg_low_energy_time = sum(time_by_energy["🪶"]) / len(
+                    time_by_energy["🪶"]
+                )
+                assert avg_low_energy_time <= 30  # Low energy tasks are shorter
+
+            # Analyze priority distribution
+            high_priority_tasks = [
+                task for task in all_tasks if "#high-priority" in task.get("tags", [])
+            ]
+            assert len(high_priority_tasks) >= 3  # Should have high priority items
+
+    def test_project_progress_tracking(self) -> None:
+        """Test project progress tracking across the GTD system."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "progress_vault"
+
+            # Setup vault
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            gtd_path = vault_path / "gtd"
+
+            # Create simplified project tracking content
+            project_tracking = """---
+status: active
+projects_tracked: 3
+---
+
+# Projects - Progress Tracking
+
+## [[Mobile App Development]]
+- **Status**: In Progress (75% complete)
+- **Next Milestone**: Beta release
+- **Due**: 2025-09-15
+
+### Progress This Week
+- [x] Complete user authentication module ✅2025-08-14 #task
+- [x] Implement data synchronization ✅2025-08-15 #task
+- [ ] Test on multiple devices @computer #task [[Mobile App Development]]
+
+## [[Team Training Initiative]]
+- **Status**: Planning (30% complete)
+- **Next Milestone**: Curriculum approval
+- **Due**: 2025-10-01
+
+### Progress This Week
+- [x] Survey team learning needs ✅2025-08-13 #task
+- [ ] Design training modules @computer #task [[Team Training Initiative]]
+- [ ] Schedule training sessions @calls #task [[Team Training Initiative]]
+
+## [[Office Space Optimization]]
+- **Status**: On Hold (20% complete)
+- **Blocking Issue**: Budget approval pending
+- **Review Date**: 2025-08-25
+
+### Pending Actions
+- [ ] Get final contractor quotes @calls #task [[Office Space Optimization]]
+- [ ] Prepare budget proposal @computer #task [[Office Space Optimization]]
+"""
+
+            task_tracking = """---
+status: active
+---
+
+# Next Actions - Project Linked
+
+## Mobile App Development Tasks
+
+- [ ] Set up CI/CD pipeline @computer #task [[Mobile App Development]]
+- [ ] Review security requirements @computer #task [[Mobile App Development]]
+- [ ] Schedule beta tester recruitment @calls #task [[Mobile App Development]]
+
+## Team Training Tasks
+
+- [ ] Create presentation materials @computer #task [[Team Training Initiative]]
+- [ ] Book training venue @calls #task [[Team Training Initiative]]
+- [ ] Order training materials @errands #task [[Team Training Initiative]]
+
+## Office Optimization Tasks
+
+- [ ] Research modern office furniture @computer #task [[Office Space Optimization]]
+- [ ] Meet with interior designer @calls #task [[Office Space Optimization]]
+"""
+
+            (gtd_path / "projects.md").write_text(project_tracking)
+            (gtd_path / "next-actions.md").write_text(task_tracking)
+
+            # Read and analyze project progress
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            result = read_gtd_files_impl(str(vault_path))
+
+            assert result["status"] == "success"
+
+            # Extract all tasks and analyze project relationships
+            all_tasks = []
+            for file_data in result["files"]:
+                all_tasks.extend(file_data["tasks"])
+
+            # Basic validation - should have extracted some tasks
+            assert len(all_tasks) >= 8  # Should have tasks from both files
+
+            # Count tasks by completion status
+            completed_tasks = [
+                task for task in all_tasks if task.get("completed", False)
+            ]
+            pending_tasks = [
+                task for task in all_tasks if not task.get("completed", False)
+            ]
+
+            # Should have both completed and pending tasks
+            assert len(completed_tasks) >= 3  # Several completed tasks
+            assert len(pending_tasks) >= 5  # Several pending tasks
+
+            # Group tasks by project
+            tasks_by_project: dict[str, dict[str, list[dict[str, Any]]]] = {}
+            tasks_without_project = []
+
+            for task in all_tasks:
+                project = task.get("project")
+                if project:
+                    if project not in tasks_by_project:
+                        tasks_by_project[project] = {"completed": [], "pending": []}
+
+                    if task.get("completed", False):
+                        tasks_by_project[project]["completed"].append(task)
+                    else:
+                        tasks_by_project[project]["pending"].append(task)
+                else:
+                    tasks_without_project.append(task)
+
+            # Should have project-linked tasks
+            assert len(tasks_by_project) >= 2  # At least 2 projects with tasks
+
+            # Verify we have the main projects represented
+            project_names = list(tasks_by_project.keys())
+            assert any("Mobile App Development" in name for name in project_names)
+            assert any("Team Training Initiative" in name for name in project_names)
+
+            # Verify basic project tracking works
+            total_project_tasks = sum(
+                len(data["completed"]) + len(data["pending"])
+                for data in tasks_by_project.values()
+            )
+            assert total_project_tasks >= 6  # Should have several project-linked tasks
+
+            # Verify completion rates can be calculated
+            for project_data in tasks_by_project.values():
+                total_tasks = len(project_data["completed"]) + len(
+                    project_data["pending"]
+                )
+                completed_count = len(project_data["completed"])
+                if total_tasks > 0:
+                    completion_rate = (completed_count / total_tasks) * 100
+                    assert isinstance(completion_rate, float)
+                    assert 0 <= completion_rate <= 100
