@@ -42,8 +42,8 @@
   - Return detailed status report of what was created vs. already existed
 - [x] 4.3 Write tests for read_gtd_file MCP tool
 - [x] 4.4 Implement read_gtd_file tool in server.py
-- [ ] 4.5 Write tests for list_gtd_files MCP tool
-- [ ] 4.6 Implement list_gtd_files tool in server.py
+- [x] 4.5 Write tests for list_gtd_files MCP tool
+- [x] 4.6 Implement list_gtd_files tool in server.py
 - [ ] 4.7 Write tests for read_all_gtd_files MCP tool
 - [ ] 4.8 Implement read_all_gtd_files tool in server.py
 - [ ] 4.9 Write tests for GTDFrontmatter Pydantic conversion
