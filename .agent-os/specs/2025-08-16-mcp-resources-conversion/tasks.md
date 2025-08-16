@@ -35,17 +35,39 @@
   - Verify integration test suite passes with resource-based approach
   - Maintain test coverage for all GTD workflow scenarios
   - Ensure backwards compatibility verification during transition
-- [ ] 1.7 Write tests for tool removal and cleanup verification
-  - Test that removed tools are no longer accessible
-  - Test that all functionality is preserved through resources
+- [ ] 1.7 Write comprehensive tests for tool removal and cleanup verification
+  - Test that removed tools (`read_gtd_file`, `list_gtd_files`, `read_gtd_files`) are no longer accessible via MCP protocol
+  - Test that implementation functions are either removed or properly refactored for resource use
+  - Test that all functionality is preserved through resources with identical data formats
   - Test server instructions reflect resource-based access patterns
-- [ ] 1.8 Remove tool implementations and update server documentation
-  - Remove `list_gtd_files`, `read_gtd_file`, and `read_gtd_files` tool decorators from server.py
-  - Clean up tool-specific code that's no longer needed
-  - Update server docstrings and meta information to reflect resource-based approach
-  - Verify no remaining references to removed tools exist in codebase
-  - Update server instructions to describe resource access patterns
-- [ ] 1.9 Verify all tests pass with complete resource implementation
+  - Verify no orphaned imports remain in the codebase after cleanup
+  - Test error scenarios for removed tools return appropriate "tool not found" responses
+- [ ] 1.8 Remove tool implementations and perform comprehensive server cleanup
+  **Server.py cleanup:**
+  - Remove `@mcp.tool()` decorators for `list_gtd_files`, `read_gtd_file`, and `read_gtd_files` (lines 278, 292, 472)
+  - Evaluate whether to keep *_impl functions for resource handlers or refactor into ResourceHandler service
+  - Remove tool wrapper functions that only call implementation functions
+  - Clean up imports that are no longer needed after tool removal
+  - Update module docstrings and meta information to reflect resource-based architecture
+  **Test file comprehensive cleanup (4 files with 100+ tool references):**
+  - **test_server.py**: Remove/refactor TestReadGTDFile, TestListGTDFiles, TestReadGTDFiles classes (lines 285-1326)
+  - **test_integration.py**: Update 30+ test scenarios to use resource URIs instead of tool calls
+  - **test_error_recovery.py**: Convert 20+ error tests to resource-based error scenarios
+  - **test_performance.py**: Update performance benchmarks to measure resource access instead of tool calls
+  - Update all imports from `*_impl` functions to resource access methods
+  - Convert test assertions to validate resource responses instead of tool returns
+  **Documentation updates:**
+  - Update server instructions to describe resource access patterns for Claude Desktop
+  - Remove tool descriptions from docstrings and replace with resource URI examples
+  - Update CLAUDE.md to reflect resource-based approach
+- [ ] 1.9 Verify complete migration and test suite stability
+  - Run full test suite with pytest to ensure all tests pass after cleanup
+  - Use grep/search to verify no remaining references to removed tools exist in codebase
+  - Check that VaultReader service methods remain functional and unchanged
+  - Validate that integration tests cover all GTD workflow scenarios using resources
+  - Performance validation comparing resource access vs previous tool performance
+  - Verify MCP protocol compliance with resource-only read operations
+  - Test server startup and resource registration without removed tools
 
 ### 2. Documentation and Validation
 - [ ] 2.1 Write documentation tests for resource URI examples and usage patterns
@@ -63,3 +85,26 @@
 **Dependencies**: Uses existing VaultReader, MarkdownParser, and TaskExtractor services without modification.
 
 **Protocol Compliance**: Follows MCP resource template patterns and FastMCP best practices throughout implementation.
+
+## Cleanup Scope Analysis
+
+### Files Requiring Changes
+- **server.py**: 6 functions to remove/refactor (3 tools + 3 implementations)
+- **test_server.py**: 3 test classes, ~50 test methods
+- **test_integration.py**: 30+ integration scenarios
+- **test_error_recovery.py**: 20+ error handling tests
+- **test_performance.py**: Performance benchmarks for all three tools
+
+### Migration Strategy
+1. **Parallel Implementation**: Implement resources alongside existing tools initially
+2. **Incremental Test Migration**: Update tests file-by-file to use resources
+3. **Validation Phase**: Ensure data consistency between tools and resources
+4. **Tool Removal**: Remove tool decorators once all tests pass with resources
+5. **Implementation Cleanup**: Decide whether to keep *_impl functions for resource handlers
+6. **Final Verification**: Complete test suite validation and performance comparison
+
+### Critical Success Factors
+- **Data Format Consistency**: Resources must return identical JSON structure as tools
+- **Error Handling Preservation**: All error scenarios must work with resources
+- **Performance Maintenance**: Resource access should not degrade performance
+- **Test Coverage**: 100% of existing functionality must be covered by resource tests
