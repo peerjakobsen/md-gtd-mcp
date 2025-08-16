@@ -40,14 +40,19 @@
   - **CRITICAL**: Only create files/folders that don't exist - NEVER overwrite existing files
   - Use Path.exists() checks before creating any file or folder
   - Return detailed status report of what was created vs. already existed
-- [ ] 4.3 Write tests for read_gtd_file MCP tool
-- [ ] 4.4 Implement read_gtd_file tool in server.py
+- [x] 4.3 Write tests for read_gtd_file MCP tool
+- [x] 4.4 Implement read_gtd_file tool in server.py
 - [ ] 4.5 Write tests for list_gtd_files MCP tool
 - [ ] 4.6 Implement list_gtd_files tool in server.py
 - [ ] 4.7 Write tests for read_all_gtd_files MCP tool
 - [ ] 4.8 Implement read_all_gtd_files tool in server.py
-- [ ] 4.9 Test MCP server startup with vault configuration
-- [ ] 4.10 Verify all MCP tool tests pass
+- [ ] 4.9 Write tests for GTDFrontmatter Pydantic conversion
+- [ ] 4.10 Convert GTDFrontmatter from dataclass to Pydantic BaseModel
+  - **BENEFIT**: Built-in model_dump() for MCP tool serialization
+  - **BENEFIT**: Automatic validation and JSON schema generation
+  - **BENEFIT**: Better datetime handling for API responses
+- [ ] 4.11 Test MCP server startup with vault configuration
+- [ ] 4.12 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
 - [ ] 5.1 Create comprehensive integration test with sample vault

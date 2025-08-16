@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from md_gtd_mcp.server import read_gtd_file_impl as read_gtd_file
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault
 
 
@@ -279,3 +280,210 @@ class TestSetupGTDVault:
         finally:
             # Clean up - restore permissions
             readonly_path.chmod(0o755)
+
+
+class TestReadGTDFile:
+    """Test read_gtd_file MCP tool."""
+
+    def setup_method(self) -> None:
+        """Set up test vault directory with sample GTD files."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.vault_path = Path(self.temp_dir) / "test_vault"
+        self.vault_path.mkdir(parents=True)
+
+        # Create a complete GTD structure
+        setup_gtd_vault(str(self.vault_path))
+
+        # Add sample content to inbox for testing
+        self.gtd_path = self.vault_path / "gtd"
+        inbox_path = self.gtd_path / "inbox.md"
+        sample_content = """---
+status: active
+---
+
+# Inbox
+
+## Quick Capture
+
+- Research vacation destinations for spring break
+- [ ] Review quarterly budget report @computer #task
+- [ ] Confirm meeting attendance with team @calls #task
+
+## Ideas and Notes
+
+Check [[Project Alpha]] status for next steps.
+"""
+        inbox_path.write_text(sample_content)
+
+    def test_read_gtd_file_success(self) -> None:
+        """Test successfully reading a GTD file."""
+        inbox_path = str(self.gtd_path / "inbox.md")
+
+        result = read_gtd_file(str(self.vault_path), inbox_path)
+
+        # Verify response structure
+        assert "status" in result
+        assert "file" in result
+        assert "vault_path" in result
+        assert result["status"] == "success"
+        assert result["vault_path"] == str(self.vault_path)
+
+        # Verify file data structure
+        file_data = result["file"]
+        assert "file_path" in file_data
+        assert "file_type" in file_data
+        assert "content" in file_data
+        assert "frontmatter" in file_data
+        assert "tasks" in file_data
+        assert "links" in file_data
+
+        # Verify parsed content
+        assert file_data["file_type"] == "inbox"
+        assert "# Inbox" in file_data["content"]
+        assert file_data["frontmatter"]["status"] == "active"
+
+        # Verify tasks were extracted
+        assert len(file_data["tasks"]) >= 2
+        task_descriptions = [task["description"] for task in file_data["tasks"]]
+        assert any("quarterly budget report" in desc for desc in task_descriptions)
+        assert any("meeting attendance" in desc for desc in task_descriptions)
+
+    def test_read_gtd_file_with_relative_path(self) -> None:
+        """Test reading GTD file using relative path from vault."""
+        relative_path = "gtd/inbox.md"
+
+        result = read_gtd_file(str(self.vault_path), relative_path)
+
+        assert result["status"] == "success"
+        assert result["file"]["file_type"] == "inbox"
+
+    def test_read_gtd_file_context_file(self) -> None:
+        """Test reading a context file."""
+        calls_path = str(self.gtd_path / "contexts" / "@calls.md")
+
+        result = read_gtd_file(str(self.vault_path), calls_path)
+
+        assert result["status"] == "success"
+        file_data = result["file"]
+        assert file_data["file_type"] == "context"
+        assert "📞 Calls Context" in file_data["content"]
+
+    def test_read_gtd_file_projects_file(self) -> None:
+        """Test reading the projects file."""
+        projects_path = str(self.gtd_path / "projects.md")
+
+        result = read_gtd_file(str(self.vault_path), projects_path)
+
+        assert result["status"] == "success"
+        file_data = result["file"]
+        assert file_data["file_type"] == "projects"
+        assert "# Projects" in file_data["content"]
+
+    def test_read_gtd_file_nonexistent_file(self) -> None:
+        """Test reading a file that doesn't exist."""
+        nonexistent_path = str(self.gtd_path / "nonexistent.md")
+
+        result = read_gtd_file(str(self.vault_path), nonexistent_path)
+
+        assert result["status"] == "error"
+        assert "error" in result
+        assert "not found" in result["error"].lower()
+
+    def test_read_gtd_file_invalid_vault_path(self) -> None:
+        """Test reading with invalid vault path."""
+        inbox_path = str(self.gtd_path / "inbox.md")
+        invalid_vault = "/nonexistent/vault"
+
+        result = read_gtd_file(invalid_vault, inbox_path)
+
+        assert result["status"] == "error"
+        assert "error" in result
+        assert "vault" in result["error"].lower()
+
+    def test_read_gtd_file_outside_gtd_structure(self) -> None:
+        """Test reading a file outside the GTD folder structure."""
+        # Create a file outside GTD folder
+        outside_file = self.vault_path / "not_gtd.md"
+        outside_file.write_text("# Not a GTD file")
+
+        result = read_gtd_file(str(self.vault_path), str(outside_file))
+
+        assert result["status"] == "error"
+        assert "error" in result
+        assert "gtd" in result["error"].lower()
+
+    def test_read_gtd_file_empty_paths(self) -> None:
+        """Test error handling for empty paths."""
+        result1 = read_gtd_file("", str(self.gtd_path / "inbox.md"))
+        assert result1["status"] == "error"
+
+        result2 = read_gtd_file(str(self.vault_path), "")
+        assert result2["status"] == "error"
+
+    def test_read_gtd_file_with_tasks_and_links(self) -> None:
+        """Test reading file with complex tasks and links."""
+        # Create a file with various task formats and links
+        complex_file = self.gtd_path / "complex.md"
+        complex_content = """---
+priority: high
+project: test-project
+---
+
+# Complex GTD File
+
+## Tasks with contexts
+- [ ] Call client about proposal @calls #task
+- [x] Update project documentation @computer #task ✅2025-01-05
+- [ ] Buy groceries for meeting @errands #task
+
+## Project Links
+See [[Project Alpha]] for details.
+Check out [External Link](https://example.com) for reference.
+
+## Waiting Items
+- [ ] Response from vendor #waiting
+"""
+        complex_file.write_text(complex_content)
+
+        result = read_gtd_file(str(self.vault_path), str(complex_file))
+
+        assert result["status"] == "success"
+        file_data = result["file"]
+
+        # Verify frontmatter parsing - custom fields are in the 'extra' dict
+        frontmatter = file_data["frontmatter"]
+        assert frontmatter["extra"]["priority"] == "high"
+        assert frontmatter["extra"]["project"] == "test-project"
+
+        # Verify task extraction with contexts
+        tasks = file_data["tasks"]
+        assert len(tasks) >= 3  # 3 checkbox tasks are parsed
+
+        # Check for specific task with context
+        call_task = next((t for t in tasks if "client" in t["description"]), None)
+        assert call_task is not None
+        assert call_task["context"] == "@calls"
+        assert not call_task["completed"]
+
+        # Check completed task
+        completed_task = next((t for t in tasks if t["completed"]), None)
+        assert completed_task is not None
+        assert "documentation" in completed_task["description"]
+
+        # Verify link extraction
+        links = file_data["links"]
+        assert len(links) >= 4  # Context links + Project Alpha + External link
+
+        # Check for Project Alpha wikilink
+        project_link = next(
+            (link for link in links if "Project Alpha" in link["target"]), None
+        )
+        assert project_link is not None
+        assert project_link["type"] == "wikilink"
+        assert not project_link["is_external"]
+
+        # Check for external markdown link
+        external_link = next((link for link in links if link["is_external"]), None)
+        assert external_link is not None
+        assert external_link["type"] == "external"
+        assert "example.com" in external_link["target"]
