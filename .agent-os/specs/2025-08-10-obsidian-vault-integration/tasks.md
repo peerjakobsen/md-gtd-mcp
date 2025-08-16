@@ -59,10 +59,48 @@
 - [x] 4.13 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
-- [ ] 5.1 Create comprehensive integration test with sample vault
-- [ ] 5.2 Test end-to-end workflow from vault config to MCP response
-- [ ] 5.3 Update CLAUDE.md with implementation details
-- [ ] 5.4 Run full test suite with pytest
+- [ ] 5.1 Test new user onboarding workflow - Complete GTD vault setup from empty directory
+  - Verify setup_gtd_vault creates all required files/folders
+  - Confirm list_gtd_files shows proper structure
+  - Validate read_gtd_files returns expected templates
+- [ ] 5.2 Test existing user migration workflow - Partial vault completion without data loss
+  - Create vault with some existing GTD files containing user data
+  - Run setup_gtd_vault and verify it preserves existing content
+  - Confirm new files are created only where missing
+- [ ] 5.3 Test daily inbox processing workflow - Reading and categorizing captured items
+  - Read inbox file with mixed processed/unprocessed items
+  - Verify task extraction distinguishes actionable items
+  - Validate proper categorization suggestions in response
+- [ ] 5.4 Test weekly review workflow - Complete system overview and statistics
+  - Call read_gtd_files for full vault content
+  - Verify aggregation of tasks by context and project
+  - Validate identification of completed vs pending items
+- [ ] 5.5 Test context-based task filtering - Finding tasks for focused work sessions
+  - Use list_gtd_files with file_type="context" filter
+  - Read specific context files (@calls, @computer)
+  - Verify proper task grouping by context across all files
+- [ ] 5.6 Test project tracking workflow - Following project references and dependencies
+  - Read projects file and extract project definitions
+  - Follow wikilinks to related tasks in other files
+  - Validate project-task relationships are preserved
+- [ ] 5.7 Test cross-file navigation - Validating link integrity across GTD system
+  - Extract all links from read_gtd_files response
+  - Verify internal links point to valid targets
+  - Validate wikilink resolution to actual files/sections
+- [ ] 5.8 Test incremental vault updates - Handling changes between reads
+  - Initial read of vault state
+  - Modify fixture files programmatically
+  - Re-read and verify changes are detected
+- [ ] 5.9 Test error recovery scenarios - Graceful handling of common issues
+  - Test with missing permissions on files
+  - Test with malformed markdown/frontmatter
+  - Verify helpful error messages for troubleshooting
+- [ ] 5.10 Test performance with realistic GTD vault - 100+ tasks across multiple files
+  - Generate larger test fixtures programmatically
+  - Measure response times for all MCP tools
+  - Verify memory usage remains reasonable
+- [ ] 5.11 Update CLAUDE.md with implementation details
+- [ ] 5.12 Run full test suite with pytest
 
 ## Task Dependencies
 
@@ -77,6 +115,6 @@
 - **Task 2**: High complexity (4-5 hours) - Obsidian Tasks parsing with GTD metadata
 - **Task 3**: Medium complexity (3-4 hours) - GTD folder structure handling
 - **Task 4**: Medium complexity (3-4 hours) - MCP integration + vault setup tool
-- **Task 5**: Low complexity (1-2 hours) - Testing and documentation
+- **Task 5**: High complexity (6-8 hours) - Comprehensive integration testing and documentation covering 10 end-to-end GTD workflow scenarios
 
-**Total Estimate**: 14-19 hours of development time
+**Total Estimate**: 19-25 hours of development time
