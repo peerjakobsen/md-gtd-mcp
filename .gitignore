@@ -73,6 +73,4 @@ instance/
 .webassets-cache
 
 # Serena AI assistant files
-.serena/cache/
-.serena/memories/
-.serena/project.yml
+.serena/
