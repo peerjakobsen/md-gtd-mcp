@@ -11,11 +11,13 @@
 - Provides simple inbox categorization suggestions
 
 **Features**:
-- [x] MCP Server Setup (S) - FastMCP server with basic tool registration
+- [x] MCP Server Setup (S) - FastMCP server with basic tool registration, server instructions, and meta information for GTD context
 - [ ] Obsidian Vault Integration (M) - Read markdown files, parse frontmatter and links
 - [ ] File System Navigation (S) - Browse GTD folder structure and find relevant files
 - [ ] Basic Markdown Parsing (M) - Extract tasks, projects, and GTD categories from markdown
 - [ ] Simple Categorization Logic (L) - Suggest GTD categories for inbox items using basic heuristics
+- [ ] MCP Tool Descriptions & Annotations (M) - Enhanced tool descriptions with GTD context, usage examples, and behavioral hints (readOnlyHint, destructiveHint, idempotentHint) to guide LLM behavior. Tools include meta information indicating GTD phase (capture/clarify/organize/reflect/engage) and typical usage frequency
+- [ ] MCP Prompts for GTD Workflows (M) - Pre-configured prompt templates using @mcp.prompt decorator for common GTD workflows: weekly_review, inbox_processing, project_planning, daily_planning. Each prompt provides structured guidance to help Claude understand specific GTD methodology steps and decision criteria
 - [ ] Configuration System (S) - JSON config for vault paths and basic preferences
 - [ ] Error Handling & Validation (M) - Robust error handling for file operations and invalid inputs
 
@@ -28,11 +30,13 @@
 - Processes multiple inbox items efficiently
 
 **Features**:
-- [ ] Advanced Text Analysis (L) - NLP-based extraction of actions, contexts, and priorities from text
+- [ ] Advanced Text Analysis (L) - NLP-based extraction of actions, contexts, and priorities from text with automatic context detection (@home, @office, @calls, @errands)
 - [ ] Project Decomposition Engine (XL) - Break high-level projects into specific, actionable tasks
 - [ ] Stall Detection System (M) - Identify projects without recent activity or clear next actions
 - [ ] Batch Inbox Processing (L) - Handle multiple captured thoughts simultaneously with consistent logic
 - [ ] Context & Priority Recognition (L) - Identify GTD contexts (@calls, @errands) and priority indicators
+- [ ] Intelligent Tool Naming & Organization (S) - GTD-specific tool names (process_inbox, capture_item, review_projects) with proper categorization and tags for LLM understanding
+- [ ] Context-Aware Tool Transformation (M) - Dynamic tool adaptation using Tool.from_tool() patterns to create specialized versions based on user context (e.g., transform generic "process_item" into "process_meeting_notes" or "process_email_capture" with appropriate parameter defaults)
 - [ ] Template System (M) - Customizable templates for different project types and workflows
 - [ ] Linking Intelligence (M) - Understand and suggest connections between related projects and notes
 
@@ -50,6 +54,8 @@
 - [ ] Focus Recommendations (L) - Suggest priority areas based on context, energy, and available time
 - [ ] Progress Tracking Dashboard (M) - Visual insights into project advancement and completion rates
 - [ ] Custom Review Templates (M) - Flexible review formats for different review types and frequencies
+- [ ] LLM Sampling Integration (L) - Use Claude's capabilities for complex GTD decisions through ctx.sample() for nuanced analysis of project status, priority assessment, and workflow optimization recommendations
+- [ ] Interactive Elicitation (M) - Gather structured input during reviews and processing using ctx.elicit() with dataclasses for TaskDetails, ProjectInfo, and ReviewCriteria to ensure comprehensive GTD metadata capture
 - [ ] Historical Trend Analysis (L) - Track productivity patterns over time for continuous improvement
 - [ ] Integration Optimization (M) - Performance improvements for large vault processing
 

@@ -55,3 +55,41 @@
 - Positive: Consistent with technology stack preferences
 - Positive: Access to FastMCP community and resources
 - Negative: Framework dependency and potential limitations
+
+### D003: MCP Best Practices for LLM Integration
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Architecture
+- **Stakeholders**: Development Team, Product Owner
+
+**Context**: Research into FastMCP best practices revealed specific patterns and techniques needed to ensure optimal LLM (Claude Desktop) understanding and usage of MCP servers. Standard functional implementation is insufficient for effective AI interaction.
+
+**Alternatives**:
+1. Implement basic MCP tools with minimal descriptions
+2. Focus only on functional capabilities without LLM optimization
+3. Implement comprehensive FastMCP best practices for LLM interaction
+
+**Decision**: Implement comprehensive FastMCP best practices including enhanced tool descriptions, MCP prompts, annotations, meta information, and interactive features.
+
+**Rationale**:
+- LLMs require detailed context and usage guidance to effectively use tools
+- FastMCP provides proven patterns (tool descriptions, prompts, annotations) for LLM interaction
+- GTD methodology benefits from structured prompts and guided workflows
+- Interactive features (elicitation, sampling) enable complex decision-making workflows
+- Proper tool organization and naming improves discoverability and usage
+
+**Implementation Details**:
+- Tool descriptions enhanced with GTD context and usage examples
+- Behavioral annotations (readOnlyHint, destructiveHint, idempotentHint) guide LLM behavior
+- Meta information indicates GTD phases and usage frequency
+- Pre-configured prompts for common GTD workflows (weekly review, inbox processing)
+- Tool transformation patterns for context-specific adaptations
+- Interactive elicitation for structured data gathering during GTD processes
+
+**Consequences**:
+- Positive: Optimal Claude Desktop integration and user experience
+- Positive: Structured approach to GTD workflow automation
+- Positive: Leverages FastMCP framework capabilities effectively
+- Positive: Provides foundation for advanced AI-assisted GTD features
+- Neutral: Additional implementation complexity and documentation requirements
+- Negative: Increased initial development effort for comprehensive descriptions and prompts
