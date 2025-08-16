@@ -3112,3 +3112,529 @@ class TestCrossFileNavigationWorkflow:
                 assert is_valid_external, (
                     f"External link '{link['target']}' has invalid format"
                 )
+
+
+class TestIncrementalVaultUpdatesWorkflow:
+    """Integration tests for task 5.8: Incremental vault updates workflow."""
+
+    def test_change_detection_between_reads(self) -> None:
+        """Test incremental vault updates - handling changes between reads.
+
+        This test verifies:
+        - Initial read of vault state
+        - Modify fixture files programmatically
+        - Re-read and verify changes are detected
+        """
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "incremental_vault"
+
+            # Step 1: Setup complete GTD vault structure
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            # Step 2: Add initial content to multiple files
+            gtd_path = vault_path / "gtd"
+
+            initial_inbox_content = """---
+status: active
+last_processed: 2025-08-15
+items_count: 3
+---
+
+# Inbox - Initial State
+
+## Today's Capture
+
+- [ ] Call client about project update @calls #task
+- [ ] Review quarterly budget @computer #task ⏱️60
+- [ ] Pick up office supplies @errands #task
+
+## Notes
+
+Meeting with team about Q4 planning scheduled for next week.
+Need to prepare agenda items.
+"""
+
+            initial_projects_content = """---
+status: active
+total_projects: 2
+---
+
+# Projects - Initial State
+
+## Active Projects
+
+### [[Website Redesign]]
+- outcome: Launch new company website
+- status: active
+- area: Marketing
+- next_review: 2025-09-01
+
+**Progress:** Initial wireframes completed.
+
+### [[Team Training Program]]
+- outcome: Implement new employee onboarding
+- status: planning
+- area: HR
+
+**Notes:** Researching training platforms.
+"""
+
+            inbox_path = gtd_path / "inbox.md"
+            projects_path = gtd_path / "projects.md"
+
+            inbox_path.write_text(initial_inbox_content)
+            projects_path.write_text(initial_projects_content)
+
+            # Step 3: Perform initial read of vault state
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            initial_result = read_gtd_files_impl(str(vault_path))
+
+            assert initial_result["status"] == "success"
+            assert "files" in initial_result
+            assert "summary" in initial_result
+
+            # Verify initial state
+            initial_files = initial_result["files"]
+            initial_summary = initial_result["summary"]
+
+            # Find initial inbox and projects data
+            initial_inbox_file = None
+            initial_projects_file = None
+            for file_data in initial_files:
+                if file_data["file_type"] == "inbox":
+                    initial_inbox_file = file_data
+                elif file_data["file_type"] == "projects":
+                    initial_projects_file = file_data
+
+            assert initial_inbox_file is not None
+            assert initial_projects_file is not None
+
+            # Verify initial inbox state
+            assert len(initial_inbox_file["tasks"]) == 3
+            assert initial_inbox_file["frontmatter"]["extra"]["items_count"] == 3
+            assert "Today's Capture" in initial_inbox_file["content"]
+
+            # Verify initial projects state
+            assert len(initial_projects_file["frontmatter"]["extra"]) >= 1
+            assert initial_projects_file["frontmatter"]["extra"]["total_projects"] == 2
+            assert "Website Redesign" in initial_projects_file["content"]
+            assert "Team Training Program" in initial_projects_file["content"]
+
+            # Store initial task and link counts for comparison
+            initial_total_tasks = initial_summary["total_tasks"]
+            initial_total_links = initial_summary["total_links"]
+
+            # Step 4: Modify files programmatically (simulate user changes)
+
+            # Add new tasks to inbox
+            modified_inbox_content = """---
+status: active
+last_processed: 2025-08-16
+items_count: 6
+processing_priority: high
+---
+
+# Inbox - Modified State
+
+## Today's Capture
+
+- [ ] Call client about project update @calls #task
+- [ ] Review quarterly budget @computer #task ⏱️60
+- [ ] Pick up office supplies @errands #task
+
+## New Items Added
+
+- [ ] Schedule dentist appointment @calls #task ⏱️15 🔥
+- [ ] Update project documentation @computer #task 📅2025-08-20
+- [ ] Research new productivity tools @computer #task
+
+## Notes
+
+Meeting with team about Q4 planning scheduled for next week.
+Need to prepare agenda items.
+
+**Update:** Added three new action items during afternoon review.
+Check [[Website Redesign]] project status before client call.
+"""
+
+            # Update projects with new project and status changes
+            modified_projects_content = """---
+status: active
+total_projects: 3
+last_updated: 2025-08-16
+---
+
+# Projects - Modified State
+
+## Active Projects
+
+### [[Website Redesign]]
+- outcome: Launch new company website
+- status: active
+- area: Marketing
+- next_review: 2025-09-01
+
+**Progress:** Initial wireframes completed. Design review scheduled.
+
+### [[Team Training Program]]
+- outcome: Implement new employee onboarding
+- status: active
+- area: HR
+
+**Notes:** Selected training platform. Starting content development.
+
+### [[Office Renovation]]
+- outcome: Modernize workspace layout
+- status: planning
+- area: Operations
+- next_review: 2025-08-25
+
+**Progress:** Initial space assessment completed.
+Waiting for contractor quotes.
+
+## Reference Links
+
+See [[next-actions]] for related tasks.
+Review [[Team Training Program]] weekly.
+"""
+
+            # Write modified content
+            inbox_path.write_text(modified_inbox_content)
+            projects_path.write_text(modified_projects_content)
+
+            # Step 5: Perform second read to detect changes
+            modified_result = read_gtd_files_impl(str(vault_path))
+
+            assert modified_result["status"] == "success"
+            assert "files" in modified_result
+            assert "summary" in modified_result
+
+            # Verify changes were detected
+            modified_files = modified_result["files"]
+            modified_summary = modified_result["summary"]
+
+            # Find modified inbox and projects data
+            modified_inbox_file = None
+            modified_projects_file = None
+            for file_data in modified_files:
+                if file_data["file_type"] == "inbox":
+                    modified_inbox_file = file_data
+                elif file_data["file_type"] == "projects":
+                    modified_projects_file = file_data
+
+            assert modified_inbox_file is not None
+            assert modified_projects_file is not None
+
+            # Step 6: Verify specific changes were detected
+
+            # Inbox changes
+            assert len(modified_inbox_file["tasks"]) == 6  # 3 original + 3 new
+            assert modified_inbox_file["frontmatter"]["extra"]["items_count"] == 6
+            assert "New Items Added" in modified_inbox_file["content"]
+            assert "processing_priority" in modified_inbox_file["frontmatter"]["extra"]
+            assert (
+                modified_inbox_file["frontmatter"]["extra"]["processing_priority"]
+                == "high"
+            )
+
+            # Verify new tasks have proper metadata
+            new_tasks = [
+                task
+                for task in modified_inbox_file["tasks"]
+                if task["description"]
+                in [
+                    "Schedule dentist appointment",
+                    "Update project documentation",
+                    "Research new productivity tools",
+                ]
+            ]
+            assert len(new_tasks) == 3
+
+            # Check task with energy and time estimate
+            dentist_task = next(
+                (t for t in new_tasks if "dentist" in t["description"]), None
+            )
+            assert dentist_task is not None
+            assert dentist_task["energy"] == "🔥"
+            assert dentist_task["time_estimate"] == 15
+
+            # Check task with due date
+            doc_task = next(
+                (t for t in new_tasks if "documentation" in t["description"]), None
+            )
+            assert doc_task is not None
+            assert doc_task["due_date"] is not None
+
+            # Projects changes
+            assert modified_projects_file["frontmatter"]["extra"]["total_projects"] == 3
+            assert "Office Renovation" in modified_projects_file["content"]
+            assert "last_updated" in modified_projects_file["frontmatter"]["extra"]
+
+            # Verify link changes
+            modified_links = modified_projects_file["links"]
+            link_targets = [link["target"] for link in modified_links]
+            assert "next-actions" in link_targets
+            assert "Team Training Program" in link_targets
+
+            # Step 7: Verify summary statistics reflect changes
+            assert modified_summary["total_tasks"] > initial_total_tasks
+            assert modified_summary["total_tasks"] == initial_total_tasks + 3
+
+            # Links should have increased (new wikilinks added)
+            assert modified_summary["total_links"] > initial_total_links
+
+            # Step 8: Test individual file reading to verify changes
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            inbox_read_result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+            assert inbox_read_result["status"] == "success"
+
+            inbox_file_data = inbox_read_result["file"]
+            assert len(inbox_file_data["tasks"]) == 6
+            assert "Modified State" in inbox_file_data["content"]
+
+            projects_read_result = read_gtd_file_impl(
+                str(vault_path), "gtd/projects.md"
+            )
+            assert projects_read_result["status"] == "success"
+
+            projects_file_data = projects_read_result["file"]
+            assert "Office Renovation" in projects_file_data["content"]
+            assert projects_file_data["frontmatter"]["extra"]["total_projects"] == 3
+
+    def test_task_completion_tracking_between_reads(self) -> None:
+        """Test detection of task completion changes between reads."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "completion_vault"
+
+            # Setup vault
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            gtd_path = vault_path / "gtd"
+            next_actions_path = gtd_path / "next-actions.md"
+
+            # Initial content with pending tasks
+            initial_content = """---
+status: active
+last_reviewed: 2025-08-15
+---
+
+# Next Actions
+
+## @computer
+
+- [ ] Update website content @computer #task ⏱️90
+- [ ] Review analytics report @computer #task
+- [ ] Backup project files @computer #task ⏱️30
+
+## @calls
+
+- [ ] Call vendor about renewal @calls #task ⏱️20
+- [ ] Schedule team meeting @calls #task ⏱️10
+"""
+
+            next_actions_path.write_text(initial_content)
+
+            # Initial read
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            initial_result = read_gtd_file_impl(str(vault_path), "gtd/next-actions.md")
+
+            assert initial_result["status"] == "success"
+            initial_tasks = initial_result["file"]["tasks"]
+            assert len(initial_tasks) == 5
+            assert all(not task.get("completed", False) for task in initial_tasks)
+
+            # Modify content - mark some tasks as completed
+            modified_content = """---
+status: active
+last_reviewed: 2025-08-16
+completed_today: 3
+---
+
+# Next Actions
+
+## @computer
+
+- [x] Update website content @computer #task ⏱️90 ✅2025-08-16
+- [ ] Review analytics report @computer #task
+- [x] Backup project files @computer #task ⏱️30 ✅2025-08-16
+
+## @calls
+
+- [x] Call vendor about renewal @calls #task ⏱️20 ✅2025-08-16
+- [ ] Schedule team meeting @calls #task ⏱️10
+
+## @errands
+
+- [ ] Pick up printer supplies @errands #task
+"""
+
+            next_actions_path.write_text(modified_content)
+
+            # Second read - verify completion detection
+            modified_result = read_gtd_file_impl(str(vault_path), "gtd/next-actions.md")
+
+            assert modified_result["status"] == "success"
+            modified_tasks = modified_result["file"]["tasks"]
+
+            # Should now have 6 tasks (5 original + 1 new)
+            assert len(modified_tasks) == 6
+
+            # Check completion status
+            completed_tasks = [
+                task for task in modified_tasks if task.get("completed", False)
+            ]
+            pending_tasks = [
+                task for task in modified_tasks if not task.get("completed", False)
+            ]
+
+            assert len(completed_tasks) == 3
+            assert len(pending_tasks) == 3
+
+            # Verify frontmatter updated
+            frontmatter = modified_result["file"]["frontmatter"]
+            assert frontmatter["extra"]["completed_today"] == 3
+
+    def test_link_changes_between_reads(self) -> None:
+        """Test detection of link changes between vault reads."""
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "links_vault"
+
+            # Setup vault
+            from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+            setup_result = setup_gtd_vault(str(vault_path))
+            assert setup_result["status"] == "success"
+
+            gtd_path = vault_path / "gtd"
+            projects_path = gtd_path / "projects.md"
+
+            # Initial content with basic links
+            initial_content = """---
+status: active
+---
+
+# Projects
+
+## Active Projects
+
+### [[Website Redesign]]
+- outcome: Launch new website
+- status: active
+
+See related tasks in [[next-actions]].
+
+Reference: [Design Guidelines](https://example.com/design)
+"""
+
+            projects_path.write_text(initial_content)
+
+            # Initial read
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            initial_result = read_gtd_file_impl(str(vault_path), "gtd/projects.md")
+
+            assert initial_result["status"] == "success"
+            initial_links = initial_result["file"]["links"]
+            assert (
+                len(initial_links) == 3
+            )  # Website Redesign, next-actions, design guidelines
+
+            # Store initial link targets for comparison
+            initial_link_targets = [link["target"] for link in initial_links]
+
+            # Modify content - add more links and change existing ones
+            modified_content = """---
+status: active
+total_links: 8
+---
+
+# Projects
+
+## Active Projects
+
+### [[Website Redesign]]
+- outcome: Launch new website
+- status: active
+- related: [[Marketing Campaign]], [[User Research]]
+
+See related tasks in [[next-actions]] and [[waiting-for]].
+
+### [[Marketing Campaign]]
+- outcome: Increase brand awareness
+- status: planning
+- dependencies: [[Website Redesign]]
+
+## Reference Links
+
+- [Design Guidelines](https://example.com/design-v2)
+- [SEO Best Practices](https://example.com/seo)
+- [Analytics Dashboard](https://analytics.example.com)
+
+## Cross-References
+
+Check [[someday-maybe]] for future project ideas.
+Review [[contexts/@computer]] for web development tasks.
+"""
+
+            projects_path.write_text(modified_content)
+
+            # Second read - verify link changes
+            modified_result = read_gtd_file_impl(str(vault_path), "gtd/projects.md")
+
+            assert modified_result["status"] == "success"
+            modified_links = modified_result["file"]["links"]
+
+            # Should have more links now (some links may appear multiple times)
+            assert len(modified_links) > len(initial_links)
+
+            # Verify specific link changes by checking targets
+            link_targets = [link["target"] for link in modified_links]
+            unique_targets = set(link_targets)
+
+            # Should have at least these new unique targets
+            expected_new_targets = {
+                "Marketing Campaign",
+                "User Research",
+                "waiting-for",
+                "someday-maybe",
+                "contexts/@computer",
+                "https://example.com/seo",
+                "https://analytics.example.com",
+                "https://example.com/design-v2",
+            }
+
+            # Verify new targets are present
+            for target in expected_new_targets:
+                assert target in link_targets, (
+                    f"Expected target '{target}' not found in links"
+                )
+
+            # Verify we have significantly more unique targets than initial
+            initial_unique_targets = set(initial_link_targets)
+            assert len(unique_targets) > len(initial_unique_targets)
+
+            # Should have at least 10 unique targets
+            # (original 3 + new ones, accounting for modifications)
+            assert len(unique_targets) >= 10
+
+            # Verify frontmatter reflects link count metadata
+            frontmatter = modified_result["file"]["frontmatter"]
+            assert frontmatter["extra"]["total_links"] == 8

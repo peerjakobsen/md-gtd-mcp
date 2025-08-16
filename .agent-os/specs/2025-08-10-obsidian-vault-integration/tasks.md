@@ -87,11 +87,11 @@
   - Extract all links from read_gtd_files response
   - Verify internal links point to valid targets
   - Validate wikilink resolution to actual files/sections
-- [ ] 5.8 Test incremental vault updates - Handling changes between reads
+- [x] 5.8 Test incremental vault updates - Handling changes between reads
   - Initial read of vault state
   - Modify fixture files programmatically
   - Re-read and verify changes are detected
-- [ ] 5.9 Test error recovery scenarios - Graceful handling of common issues
+- [x] 5.9 Test error recovery scenarios - Graceful handling of common issues
   - Test with missing permissions on files
   - Test with malformed markdown/frontmatter
   - Verify helpful error messages for troubleshooting
@@ -99,8 +99,6 @@
   - Generate larger test fixtures programmatically
   - Measure response times for all MCP tools
   - Verify memory usage remains reasonable
-- [ ] 5.11 Update CLAUDE.md with implementation details
-- [ ] 5.12 Run full test suite with pytest
 
 ## Task Dependencies
 
