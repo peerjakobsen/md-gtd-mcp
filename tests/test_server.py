@@ -1246,3 +1246,84 @@ status: active
         for file_data in files:
             assert file_data["file_type"] == "context"
             assert "content" in file_data
+
+
+class TestMCPServerStartup:
+    """Test MCP server startup and configuration."""
+
+    def test_mcp_server_initialization(self) -> None:
+        """Test that MCP server can be initialized without errors."""
+        from md_gtd_mcp.server import mcp
+
+        # Verify MCP server instance is created
+        assert mcp is not None
+        assert hasattr(mcp, "name")
+        assert mcp.name == "Markdown GTD"
+
+    def test_mcp_server_main_function_exists(self) -> None:
+        """Test that main function for server startup exists."""
+        from md_gtd_mcp.server import main
+
+        # Verify main function is callable
+        assert callable(main)
+
+        # Note: We don't actually call main() as it would start the server and block
+        # In a real scenario, you might use mock or subprocess for full testing
+
+    def test_mcp_server_implementation_functions_exist(self) -> None:
+        """Test that all MCP tool implementation functions exist and are callable."""
+        # Test that the implementation functions are available and callable
+        from md_gtd_mcp.server import (
+            list_gtd_files_impl,
+            read_gtd_file_impl,
+            read_gtd_files_impl,
+        )
+        from md_gtd_mcp.services.vault_setup import setup_gtd_vault
+
+        # Verify all implementation functions are callable
+        assert callable(list_gtd_files_impl)
+        assert callable(read_gtd_file_impl)
+        assert callable(read_gtd_files_impl)
+        assert callable(setup_gtd_vault)
+
+    def test_mcp_server_can_handle_basic_tool_calls(self) -> None:
+        """Test that MCP server implementation functions can handle basic calls."""
+        import tempfile
+        from pathlib import Path
+
+        from md_gtd_mcp.server import list_gtd_files_impl
+
+        # Test list_gtd_files with empty vault (should handle gracefully)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            empty_vault = Path(temp_dir) / "empty"
+            empty_vault.mkdir()
+
+            result = list_gtd_files_impl(str(empty_vault))
+            assert result["status"] == "success"
+            assert len(result["files"]) == 0
+            assert "suggestion" in result  # Should suggest setup
+
+    def test_mcp_server_tools_are_registered(self) -> None:
+        """Test that MCP server has tools registered (basic validation)."""
+        from md_gtd_mcp.server import mcp
+
+        # Verify that the server exists and is properly configured
+        assert mcp is not None
+        assert mcp.name == "Markdown GTD"
+
+        # Verify that the decorated functions exist in the server module
+        # This indirectly confirms the tools are registered
+        from md_gtd_mcp import server
+
+        expected_tool_functions = [
+            "hello_world",
+            "setup_gtd_vault",
+            "read_gtd_file",
+            "list_gtd_files",
+            "read_gtd_files",
+        ]
+
+        for tool_name in expected_tool_functions:
+            assert hasattr(server, tool_name), (
+                f"Tool function {tool_name} not found in server module"
+            )

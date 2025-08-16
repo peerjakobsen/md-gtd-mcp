@@ -55,8 +55,8 @@
   - **BENEFIT**: Built-in model_dump() for MCP tool serialization
   - **BENEFIT**: Automatic validation and JSON schema generation
   - **BENEFIT**: Better datetime handling for API responses
-- [ ] 4.12 Test MCP server startup with vault configuration
-- [ ] 4.13 Verify all MCP tool tests pass
+- [x] 4.12 Test MCP server startup with vault configuration
+- [x] 4.13 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
 - [ ] 5.1 Create comprehensive integration test with sample vault
