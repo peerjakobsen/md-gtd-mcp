@@ -3,23 +3,23 @@
 ## Task Breakdown
 
 ### 1. Core Resource Template Implementation
-- [ ] 1.1 Write tests for ResourceHandler service with URI parsing and data consistency
+- [x] 1.1 Write tests for ResourceHandler service with URI parsing and data consistency
   - Create `tests/test_resource_handler.py` testing URI parameter extraction
   - Test vault path and file path validation
   - Test data format consistency with existing tool responses
   - Test error handling for invalid paths and missing files
-- [ ] 1.2 Implement ResourceHandler service in services/resource_handler.py
+- [x] 1.2 Implement ResourceHandler service in services/resource_handler.py
   - Implement centralized resource logic reusing existing VaultReader, MarkdownParser, TaskExtractor
   - Implement URI parsing and parameter extraction for resource templates
   - Add error handling and validation for vault paths and file paths
   - Ensure data format consistency with existing tool responses
-- [ ] 1.3 Write tests for resource templates with comprehensive URI pattern matching
+- [x] 1.3 Write tests for resource templates with comprehensive URI pattern matching
   - Create `tests/test_resources.py` with coverage for all five resource templates
   - Test URI pattern matching for `gtd://{vault_path}/files`, `gtd://{vault_path}/file/{path}`, `gtd://{vault_path}/content`
   - Test filtered variants with file type parameters
   - Verify resource annotations (readOnlyHint, idempotentHint) are properly applied
-  - Test error handling for invalid URIs and resource access scenarios
-- [ ] 1.4 Implement resource templates in server.py with proper annotations
+  - Test error handling for invalid URIs and resource access scenarios/
+- [x] 1.4 Implement resource templates in server.py with proper annotations
   - Add five resource template decorators with readOnlyHint=True, idempotentHint=True
   - Implement resource handler integration for each template
   - Add comprehensive docstrings with GTD context and usage examples

@@ -125,10 +125,17 @@ class TestResourceHandlerURIParsing:
 
     def test_parse_malformed_uri(self) -> None:
         """Test parsing malformed URI structure."""
-        malformed_uri = "gtd:test_vault/files"  # Missing //
+        # Test truly malformed URI that lacks required components
+        malformed_uri = "gtd:///"  # Missing vault path and resource pattern
 
-        with pytest.raises(ValueError, match="Malformed URI"):
+        with pytest.raises(ValueError, match="missing vault path or resource pattern"):
             self.resource_handler.parse_files_uri(malformed_uri)
+
+        # Test URI missing scheme
+        invalid_scheme_uri = "http://vault/files"
+
+        with pytest.raises(ValueError, match="Invalid URI scheme"):
+            self.resource_handler.parse_files_uri(invalid_scheme_uri)
 
 
 class TestResourceHandlerVaultValidation:

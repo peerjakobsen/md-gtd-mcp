@@ -42,11 +42,30 @@ class ResourceHandler:
         if parsed.scheme != "gtd":
             raise ValueError(f"Invalid URI scheme: {parsed.scheme}, expected 'gtd'")
 
-        if not parsed.netloc:
-            raise ValueError(f"Malformed URI: missing vault path in {uri}")
+        # Handle both netloc and path for vault path extraction
+        # For absolute paths, netloc might be empty and path starts with vault path
+        if parsed.netloc:
+            vault_path = parsed.netloc
+            path_parts = parsed.path.strip("/").split("/")
+        elif parsed.path:
+            # Handle case where vault path is in the path (absolute paths)
+            path_parts = parsed.path.strip("/").split("/")
+            if len(path_parts) < 2:
+                raise ValueError(
+                    f"Malformed URI: missing vault path or resource pattern in {uri}"
+                )
 
-        vault_path = parsed.netloc
-        path_parts = parsed.path.strip("/").split("/")
+            # Find the "files" component to split vault path from resource path
+            try:
+                files_index = path_parts.index("files")
+                vault_path = "/" + "/".join(path_parts[:files_index])
+                path_parts = path_parts[files_index:]
+            except ValueError:
+                raise ValueError(
+                    f"Invalid files URI pattern: missing 'files' component in {uri}"
+                ) from None
+        else:
+            raise ValueError(f"Malformed URI: missing vault path in {uri}")
 
         # Handle gtd://{vault_path}/files pattern
         if len(path_parts) == 1 and path_parts[0] == "files":
@@ -78,11 +97,34 @@ class ResourceHandler:
         if parsed.scheme != "gtd":
             raise ValueError(f"Invalid URI scheme: {parsed.scheme}, expected 'gtd'")
 
-        if not parsed.netloc:
-            raise ValueError(f"Malformed URI: missing vault path in {uri}")
+        # Handle both netloc and path for vault path extraction
+        if parsed.netloc:
+            vault_path = parsed.netloc
+            path_parts = parsed.path.strip("/").split("/", 1)  # Split on first / only
+        elif parsed.path:
+            # Handle case where vault path is in the path (absolute paths)
+            path_parts = parsed.path.strip("/").split("/")
+            if len(path_parts) < 3:  # Need vault_path + "file" + file_path
+                raise ValueError(f"Malformed URI: missing components in {uri}")
 
-        vault_path = parsed.netloc
-        path_parts = parsed.path.strip("/").split("/", 1)  # Split on first / only
+            # Find the "file" component to split vault path from file path
+            try:
+                file_index = path_parts.index("file")
+                vault_path = "/" + "/".join(path_parts[:file_index])
+                # Reconstruct path_parts as ["file", "remaining/path"]
+                if file_index + 1 < len(path_parts):
+                    remaining_path = "/".join(path_parts[file_index + 1 :])
+                    path_parts = ["file", remaining_path]
+                else:
+                    raise ValueError(
+                        f"Invalid file URI pattern: missing file path in {uri}"
+                    )
+            except ValueError:
+                raise ValueError(
+                    f"Invalid file URI pattern: missing 'file' component in {uri}"
+                ) from None
+        else:
+            raise ValueError(f"Malformed URI: missing vault path in {uri}")
 
         # Handle gtd://{vault_path}/file/{file_path} pattern
         if len(path_parts) == 2 and path_parts[0] == "file":
@@ -111,11 +153,29 @@ class ResourceHandler:
         if parsed.scheme != "gtd":
             raise ValueError(f"Invalid URI scheme: {parsed.scheme}, expected 'gtd'")
 
-        if not parsed.netloc:
-            raise ValueError(f"Malformed URI: missing vault path in {uri}")
+        # Handle both netloc and path for vault path extraction
+        if parsed.netloc:
+            vault_path = parsed.netloc
+            path_parts = parsed.path.strip("/").split("/")
+        elif parsed.path:
+            # Handle case where vault path is in the path (absolute paths)
+            path_parts = parsed.path.strip("/").split("/")
+            if len(path_parts) < 2:
+                raise ValueError(
+                    f"Malformed URI: missing vault path or resource pattern in {uri}"
+                )
 
-        vault_path = parsed.netloc
-        path_parts = parsed.path.strip("/").split("/")
+            # Find the "content" component to split vault path from resource path
+            try:
+                content_index = path_parts.index("content")
+                vault_path = "/" + "/".join(path_parts[:content_index])
+                path_parts = path_parts[content_index:]
+            except ValueError:
+                raise ValueError(
+                    f"Invalid content URI pattern: missing 'content' component in {uri}"
+                ) from None
+        else:
+            raise ValueError(f"Malformed URI: missing vault path in {uri}")
 
         # Handle gtd://{vault_path}/content pattern
         if len(path_parts) == 1 and path_parts[0] == "content":
