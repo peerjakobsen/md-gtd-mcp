@@ -30,6 +30,17 @@ Technical architecture for the MD-GTD-MCP server, based on global Agent OS stand
 - **Tools**: File operations, text analysis, markdown parsing
 - **Resources**: Obsidian vault access, GTD templates
 
+## MCP Implementation Details
+- **Tool Descriptions**: Enhanced descriptions with GTD context and usage examples for optimal LLM understanding
+- **Tool Annotations**: Behavioral hints (readOnlyHint, destructiveHint, idempotentHint, openWorldHint) to guide LLM tool selection
+- **Tool Meta Information**: GTD phase indicators (capture/clarify/organize/reflect/engage), usage frequency, and categorization
+- **Tool Tags**: Organized by GTD workflow, frequency, and functionality for filtering and discovery
+- **Prompt Templates**: Pre-configured @mcp.prompt decorators for common GTD workflows (weekly_review, inbox_processing, project_planning, daily_planning)
+- **Tool Transformation**: Tool.from_tool() patterns for context-specific tool adaptations (meeting notes vs email processing)
+- **Interactive Features**: ctx.elicit() with structured dataclasses for comprehensive data gathering during GTD processes
+- **LLM Sampling**: ctx.sample() integration for complex GTD decision-making and analysis
+- **Server Instructions**: Comprehensive FastMCP server instructions explaining GTD methodology and workflow integration
+
 ## Obsidian Integration
 - **File Format**: Markdown with YAML frontmatter
 - **Vault Structure**: Flexible folder organization

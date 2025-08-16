@@ -71,3 +71,6 @@ dmypy.json
 .env.*.local
 instance/
 .webassets-cache
+
+# Serena AI assistant files
+.serena/

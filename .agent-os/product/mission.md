@@ -38,21 +38,32 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 
 4. **Knowledge Extraction Overhead**: Valuable insights from meeting notes, emails, and documents require manual extraction into actionable tasks, causing important items to remain buried in notes.
 
+## Key Principles
+
+1. **GTD Phase Integrity**: Respect the five GTD phases (Capture → Clarify → Organize → Reflect → Engage) by providing appropriate tools for each phase. Quick capture requires minimal friction with NO metadata decisions (inbox items NEVER have #task tags). Clarification phase consciously adds #task tags, contexts, and categories, creating clear distinction between captured and processed items.
+
+2. **Universal Compatibility**: Support standard Obsidian markdown format (`- [ ]` tasks) as the primary interface, ensuring compatibility with existing tools like Claude Desktop and other AI assistants while maintaining optional enhanced functionality.
+
+3. **Workflow Preservation**: Enhance existing Obsidian GTD setups without forcing users to abandon their established systems, muscle memory, or preferred folder structures.
+
 ## Differentiators
 
-1. **Preserves Existing Workflow**: Unlike productivity apps that require workflow changes, this solution enhances existing Obsidian GTD setups without forcing users to abandon their established systems and muscle memory.
+1. **Proper GTD Methodology**: Unlike tools that mix capture and organization phases, maintains strict separation where inbox items require no contexts initially, and intelligent assistance is provided during the appropriate clarification phase.
 
-2. **Context-Aware Intelligence**: Leverages the rich interconnected knowledge graph in Obsidian to provide contextually relevant suggestions, understanding project relationships and priorities that standalone AI assistants cannot grasp.
+2. **AI Assistant Integration**: Designed specifically for seamless integration with Claude Desktop and other AI assistants that naturally create tasks in standard markdown format, reducing friction between human and AI workflow collaboration.
 
-3. **Transparent Automation**: All AI decisions and suggestions are logged in markdown format, maintaining the transparency and reviewability that GTD practitioners value while enabling human oversight and correction.
+3. **Context-Aware Intelligence**: Leverages the rich interconnected knowledge graph in Obsidian to provide contextually relevant suggestions, understanding project relationships and priorities that standalone AI assistants cannot grasp.
+
+4. **Transparent Automation**: All AI decisions and suggestions are logged in markdown format, maintaining the transparency and reviewability that GTD practitioners value while enabling human oversight and correction.
 
 ## Key Features
 
 ### Inbox Processing
-- **Smart Categorization**: Analyze captured thoughts and suggest GTD categories (project, next action, waiting for, someday/maybe)
-- **Action Extraction**: Automatically extract actionable tasks from meeting notes, emails, and free-form text
-- **Context Recognition**: Identify related projects and suggest appropriate placement in existing project hierarchies
-- **Batch Processing**: Process multiple inbox items simultaneously with consistent categorization logic
+- **Frictionless Capture**: Accept and store inbox items in standard Obsidian format without requiring contexts, categories, or detailed metadata during the initial capture phase
+- **Intelligent Clarification**: During the clarify phase, analyze captured thoughts and suggest GTD categories (project, next action, waiting for, someday/maybe) with contextual reasoning
+- **Action Extraction**: Automatically extract actionable tasks from meeting notes, emails, and free-form text while respecting the capture → clarify workflow
+- **Context Assignment Guidance**: Suggest appropriate GTD contexts (@home, @computer, @calls, @errands) during clarification, not capture
+- **Batch Processing**: Process multiple inbox items simultaneously with consistent categorization logic during dedicated clarification sessions
 
 ### Project Management
 - **Project Decomposition**: Break down high-level projects into specific, actionable next steps
@@ -69,5 +80,9 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 ### Integration & Workflow
 - **Native Obsidian Integration**: Work directly with existing folder structures, tags, and linking patterns
 - **MCP Protocol Support**: Enable any Claude Code-compatible AI assistant to interact with GTD systems
+- **LLM-Optimized Tool Descriptions**: Enhanced tool descriptions with GTD context, usage examples, and behavioral annotations for optimal Claude Desktop understanding and interaction
+- **Pre-configured GTD Workflow Prompts**: Ready-to-use prompt templates for weekly reviews, inbox processing, project planning, and daily planning that guide Claude through proper GTD methodology
+- **Context-Aware Tool Suggestions**: Intelligent tool adaptation based on user context (meeting notes vs email processing) with specialized parameter defaults and descriptions
+- **Interactive Processing with Elicitation**: Structured data gathering during GTD workflows using interactive prompts to ensure comprehensive capture of task details, project information, and review criteria
 - **Markdown Preservation**: Maintain all data in human-readable markdown format with clear version history
 - **Customizable Templates**: Allow users to adapt AI suggestions to match their specific GTD implementation and preferences

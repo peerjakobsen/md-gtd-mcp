@@ -41,6 +41,7 @@ This project uses Agent OS for structured development:
 - **Tech Stack**: `.agent-os/product/tech-stack.md` - Technical architecture decisions
 - **Roadmap**: `.agent-os/product/roadmap.md` - 3-phase development plan with checkboxes
 - **Decisions**: `.agent-os/product/decisions.md` - Decision log for architectural choices
+- **Current Spec**: `.agent-os/specs/2025-08-10-obsidian-vault-integration/` - Active specification for Obsidian vault integration feature
 
 ### Development Workflow
 The project follows a 3-phase roadmap:
