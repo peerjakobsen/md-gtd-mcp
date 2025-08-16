@@ -1,6 +1,11 @@
 """Integration tests for GTD MCP server components."""
 
+import tempfile
+from pathlib import Path
+
+from md_gtd_mcp.models.vault_config import VaultConfig
 from md_gtd_mcp.services.vault_reader import VaultReader
+from md_gtd_mcp.services.vault_setup import setup_gtd_vault
 from tests.fixtures import create_sample_vault
 
 
@@ -214,3 +219,168 @@ class TestGTDIntegration:
             # Most tasks should be in next-actions
             next_actions_tasks = tasks_by_type.get("next-actions", 0)
             assert next_actions_tasks > 15
+
+
+class TestNewUserOnboardingWorkflow:
+    """Integration tests for task 5.1: New user onboarding workflow."""
+
+    def test_complete_gtd_vault_setup_from_empty_directory(self) -> None:
+        """Test new user onboarding workflow.
+
+        Complete GTD vault setup from empty directory.
+
+        This test verifies:
+        - setup_gtd_vault creates all required files/folders
+        - list_gtd_files shows proper structure
+        - read_gtd_files returns expected templates
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "new_user_vault"
+
+            # Ensure directory doesn't exist initially
+            assert not vault_path.exists()
+
+            # Step 1: Setup GTD vault structure
+            setup_result = setup_gtd_vault(str(vault_path))
+
+            # Verify setup succeeded
+            assert setup_result["status"] == "success"
+            assert setup_result["vault_path"] == str(vault_path)
+
+            # Verify all expected files were created
+            expected_created = {
+                str(vault_path),  # vault directory itself
+                "gtd/",
+                "gtd/contexts/",
+                "gtd/inbox.md",
+                "gtd/projects.md",
+                "gtd/next-actions.md",
+                "gtd/waiting-for.md",
+                "gtd/someday-maybe.md",
+                "gtd/contexts/@calls.md",
+                "gtd/contexts/@computer.md",
+                "gtd/contexts/@errands.md",
+                "gtd/contexts/@home.md",
+            }
+
+            created_set = set(setup_result["created"])
+            assert expected_created.issubset(created_set)
+            assert len(setup_result["already_existed"]) == 0  # Nothing should pre-exist
+
+            # Verify vault directory and GTD structure exist
+            assert vault_path.exists()
+            assert (vault_path / "gtd").exists()
+            assert (vault_path / "gtd" / "contexts").exists()
+
+            # Step 2: Test list_gtd_files shows proper structure
+            vault_config = VaultConfig(vault_path)
+            vault_reader = VaultReader(vault_config)
+
+            # Get all GTD files
+            all_files = vault_reader.read_all_gtd_files()
+
+            # Should have all expected file types
+            file_types = {f.file_type for f in all_files}
+            expected_types = {
+                "inbox",
+                "projects",
+                "next-actions",
+                "waiting-for",
+                "someday-maybe",
+                "context",
+            }
+            assert expected_types == file_types
+
+            # Should have exactly the expected number of files
+            # 5 standard files + 4 context files = 9 total
+            assert len(all_files) == 9
+
+            # Verify context files
+            context_files = [f for f in all_files if f.file_type == "context"]
+            assert len(context_files) == 4
+
+            context_names = {f.path.split("/")[-1] for f in context_files}
+            expected_context_names = {
+                "@calls.md",
+                "@computer.md",
+                "@errands.md",
+                "@home.md",
+            }
+            assert context_names == expected_context_names
+
+            # Step 3: Verify read_gtd_files returns expected templates
+
+            # Check inbox template
+            inbox_files = [f for f in all_files if f.file_type == "inbox"]
+            assert len(inbox_files) == 1
+            inbox = inbox_files[0]
+            assert "# Inbox" in inbox.content
+            assert "capture everything here first" in inbox.content.lower()
+
+            # Check projects template
+            project_files = [f for f in all_files if f.file_type == "projects"]
+            assert len(project_files) == 1
+            projects = project_files[0]
+            assert "# Projects" in projects.content
+            assert "defined outcomes" in projects.content.lower()
+
+            # Check next-actions template
+            next_action_files = [f for f in all_files if f.file_type == "next-actions"]
+            assert len(next_action_files) == 1
+            next_actions = next_action_files[0]
+            assert "# Next Actions" in next_actions.content
+            assert "context-organized" in next_actions.content.lower()
+
+            # Check waiting-for template
+            waiting_files = [f for f in all_files if f.file_type == "waiting-for"]
+            assert len(waiting_files) == 1
+            waiting = waiting_files[0]
+            assert "# Waiting For" in waiting.content
+            assert "delegated items" in waiting.content.lower()
+
+            # Check someday-maybe template
+            someday_files = [f for f in all_files if f.file_type == "someday-maybe"]
+            assert len(someday_files) == 1
+            someday = someday_files[0]
+            assert "# Someday / Maybe" in someday.content
+            assert "future possibilities" in someday.content.lower()
+
+            # Check context files have proper Obsidian Tasks query syntax
+            for context_file in context_files:
+                assert "```tasks" in context_file.content
+                assert "not done" in context_file.content
+                assert "```" in context_file.content
+
+                # Context-specific checks
+                if "@calls" in context_file.path:
+                    assert "📞" in context_file.content
+                    assert "@calls" in context_file.content
+                elif "@computer" in context_file.path:
+                    assert "💻" in context_file.content
+                    assert "@computer" in context_file.content
+                elif "@errands" in context_file.path:
+                    assert "🚗" in context_file.content
+                    assert "@errands" in context_file.content
+                elif "@home" in context_file.path:
+                    assert "🏠" in context_file.content
+                    assert "@home" in context_file.content
+
+            # Step 4: Verify files are ready for immediate use
+
+            # All template files should be valid markdown
+            for gtd_file in all_files:
+                assert gtd_file.content is not None
+                assert len(gtd_file.content.strip()) > 0
+                assert gtd_file.title is not None
+
+            # Templates should not contain any tasks initially
+            # (they're templates, not user data)
+            for gtd_file in all_files:
+                if (
+                    gtd_file.file_type != "context"
+                ):  # Context files have query blocks, not tasks
+                    assert len(gtd_file.tasks) == 0
+
+            # Context files should contain no tasks (they have query syntax)
+            for context_file in context_files:
+                assert len(context_file.tasks) == 0

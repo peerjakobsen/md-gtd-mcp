@@ -59,7 +59,7 @@
 - [x] 4.13 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
-- [ ] 5.1 Test new user onboarding workflow - Complete GTD vault setup from empty directory
+- [x] 5.1 Test new user onboarding workflow - Complete GTD vault setup from empty directory
   - Verify setup_gtd_vault creates all required files/folders
   - Confirm list_gtd_files shows proper structure
   - Validate read_gtd_files returns expected templates
