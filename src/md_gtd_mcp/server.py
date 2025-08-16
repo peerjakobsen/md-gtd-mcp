@@ -1,6 +1,5 @@
 """FastMCP server for markdown-based GTD system."""
 
-import dataclasses
 from pathlib import Path
 from typing import Any
 
@@ -90,7 +89,7 @@ def read_gtd_file_impl(vault_path: str, file_path: str) -> dict[str, Any]:
             "file_path": gtd_file.path,
             "file_type": gtd_file.file_type,
             "content": gtd_file.content,
-            "frontmatter": dataclasses.asdict(gtd_file.frontmatter)
+            "frontmatter": gtd_file.frontmatter.model_dump()
             if gtd_file.frontmatter
             else {},
             "tasks": [
@@ -359,7 +358,7 @@ def read_gtd_files_impl(
                 "file_path": str(gtd_file.path),
                 "file_type": gtd_file.file_type,
                 "content": gtd_file.content,
-                "frontmatter": dataclasses.asdict(gtd_file.frontmatter)
+                "frontmatter": gtd_file.frontmatter.model_dump()
                 if gtd_file.frontmatter
                 else {},
                 "tasks": [

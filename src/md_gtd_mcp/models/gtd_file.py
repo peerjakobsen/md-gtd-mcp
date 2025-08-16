@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 
 @dataclass
 class MarkdownLink:
@@ -16,8 +18,7 @@ class MarkdownLink:
     line_number: int
 
 
-@dataclass
-class GTDFrontmatter:
+class GTDFrontmatter(BaseModel):
     """YAML frontmatter for GTD files, especially projects."""
 
     # Project-level metadata
@@ -27,9 +28,9 @@ class GTDFrontmatter:
     review_date: datetime | None = None
     created_date: datetime | None = None
     completed_date: datetime | None = None
-    tags: list[str] = field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     # Additional properties preserved as dict
-    extra: dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = Field(default_factory=dict)
 
 
 @dataclass

@@ -50,8 +50,8 @@
   - **PURPOSE**: Lightweight listing for GTD system overview
 - [x] 4.8 Write tests for read_gtd_files MCP tool (full content with optional filtering)
 - [x] 4.9 Implement read_gtd_files tool in server.py (comprehensive content reading)
-- [ ] 4.10 Write tests for GTDFrontmatter Pydantic conversion
-- [ ] 4.11 Convert GTDFrontmatter from dataclass to Pydantic BaseModel
+- [x] 4.10 Write tests for GTDFrontmatter Pydantic conversion
+- [x] 4.11 Convert GTDFrontmatter from dataclass to Pydantic BaseModel
   - **BENEFIT**: Built-in model_dump() for MCP tool serialization
   - **BENEFIT**: Automatic validation and JSON schema generation
   - **BENEFIT**: Better datetime handling for API responses
@@ -63,8 +63,6 @@
 - [ ] 5.2 Test end-to-end workflow from vault config to MCP response
 - [ ] 5.3 Update CLAUDE.md with implementation details
 - [ ] 5.4 Run full test suite with pytest
-- [ ] 5.5 Run code quality checks (ruff, mypy)
-- [ ] 5.6 Verify all tests and quality checks pass
 
 ## Task Dependencies
 

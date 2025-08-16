@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import frontmatter  # type: ignore[import-not-found]
+import frontmatter  # type: ignore[import-untyped]
 
 from ..models import GTDFile, GTDFrontmatter, detect_file_type
 from .link_extractor import LinkExtractor
