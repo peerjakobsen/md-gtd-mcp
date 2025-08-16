@@ -1,27 +1,33 @@
 # Roadmap
 
 ## Phase 1: Foundation & Core MCP Server (MVP)
-**Status**: ~14% Complete (1/7 features implemented)
+**Status**: ~67% Complete (10/15 features implemented)
 
 **Goal**: Build a functional MCP server that can read and analyze Obsidian GTD markdown files
 
 **Success Criteria**:
-- MCP server responds to basic queries about GTD system
-- Can read and parse Obsidian markdown files with frontmatter
-- Provides simple inbox categorization suggestions
+- ✅ MCP server responds to queries about GTD system (setup_gtd_vault, read_gtd_file, list_gtd_files, read_gtd_files)
+- ✅ Can read and parse Obsidian markdown files with frontmatter (MarkdownParser, TaskExtractor, LinkExtractor)
+- ✅ Can create and manage GTD vault structure (setup_gtd_vault with safe file creation)
+- ⏳ Provides simple inbox categorization suggestions (not yet implemented)
 
 **Features**:
 - [x] MCP Server Setup (S) - FastMCP server with basic tool registration, server instructions, and meta information for GTD context
-- [ ] Obsidian Vault Integration (M) - Read markdown files, parse frontmatter and links
-- [ ] File System Navigation (S) - Browse GTD folder structure and find relevant files
-- [ ] Basic Markdown Parsing (M) - Extract tasks, projects, and GTD categories from markdown
-- [ ] GTD Phase-Aware Task Recognition (M) - Implement file-type aware task recognition respecting GTD phases. Inbox files recognize ALL `- [ ]` items without #task requirement (pure capture). Other GTD files require #task tags for Obsidian Tasks plugin compatibility. Creates clear distinction between captured and clarified items
+- [x] Obsidian Vault Integration (M) - Read markdown files, parse frontmatter and links. Implemented with MarkdownParser, LinkExtractor, and VaultReader
+- [x] File System Navigation (S) - Browse GTD folder structure and find relevant files. VaultReader handles file type detection
+- [x] Basic Markdown Parsing (M) - Extract tasks, projects, and GTD categories from markdown. TaskExtractor, LinkExtractor, MarkdownParser complete
+- [📋] GTD Phase-Aware Task Recognition (M) - **DESIGNED** (Decision D006 made, implementation pending). Implement file-type aware task recognition respecting GTD phases. Inbox files recognize ALL `- [ ]` items without #task requirement (pure capture). Other GTD files require #task tags for Obsidian Tasks plugin compatibility. Creates clear distinction between captured and clarified items
 - [ ] Inbox Capture Tool (S) - MCP tool for adding items directly to inbox without requiring contexts or detailed metadata. Follows GTD quick-capture principle where contexts are assigned during Clarify phase, not Capture phase
 - [ ] Simple Categorization Logic (L) - Suggest GTD categories for inbox items using basic heuristics
-- [ ] MCP Tool Descriptions & Annotations (M) - Enhanced tool descriptions with GTD context, usage examples, and behavioral hints (readOnlyHint, destructiveHint, idempotentHint) to guide LLM behavior. Tools include meta information indicating GTD phase (capture/clarify/organize/reflect/engage) and typical usage frequency
+- [🔧] MCP Tool Descriptions & Annotations (M) - **BASIC** (basic descriptions exist, GTD enhancements needed). Enhanced tool descriptions with GTD context, usage examples, and behavioral hints (readOnlyHint, destructiveHint, idempotentHint) to guide LLM behavior. Tools include meta information indicating GTD phase (capture/clarify/organize/reflect/engage) and typical usage frequency
 - [ ] MCP Prompts for GTD Workflows (M) - Pre-configured prompt templates using @mcp.prompt decorator for common GTD workflows: weekly_review, inbox_processing, project_planning, daily_planning. Each prompt provides structured guidance to help Claude understand specific GTD methodology steps and decision criteria
-- [ ] Configuration System (S) - JSON config for vault paths and basic preferences
-- [ ] Error Handling & Validation (M) - Robust error handling for file operations and invalid inputs
+- [x] Configuration System (S) - JSON config for vault paths and basic preferences. VaultConfig class implemented
+- [x] Vault Setup Tool (S) - setup_gtd_vault creates complete GTD folder structure safely without overwriting existing files
+- [x] Read GTD File Tool (S) - read_gtd_file for parsing single GTD files with frontmatter and tasks
+- [x] List GTD Files Tool (S) - list_gtd_files for vault overview with metadata and filtering
+- [x] Read GTD Files Tool (M) - read_gtd_files for batch reading with comprehensive content extraction
+- [x] Integration Testing Suite (L) - 10 end-to-end workflow scenarios tested (onboarding, migration, processing, review, etc.)
+- [x] Error Handling & Validation (M) - Robust error handling for file operations and invalid inputs. Comprehensive error recovery tested
 
 ## Phase 2: Intelligent Processing & Project Management
 **Goal**: Add AI-powered insights for project decomposition and workflow automation
