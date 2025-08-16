@@ -58,7 +58,30 @@ The project follows a 3-phase roadmap:
 ## Key Implementation Details
 
 ### MCP Tools
-Tools are defined using the `@mcp.tool()` decorator in `server.py`. The current implementation includes a simple hello_world tool as a starting point.
+Tools are defined using the `@mcp.tool()` decorator in `server.py`. The current implementation includes both tools (actions) and resources (read-only data). Note: Proposed Decision D007 suggests converting read-only file operations (list_gtd_files, read_gtd_file, read_gtd_files) from tools to resources following MCP protocol best practices.
+
+### MCP Prompts for GTD Workflows
+The server uses MCP prompts to orchestrate sophisticated GTD workflows through Claude Desktop's intelligence without requiring API keys (Decision D008). This approach:
+
+- **Eliminates API Barriers**: No need for Anthropic, OpenAI, or AWS Bedrock API configuration
+- **Leverages Client Intelligence**: Uses Claude Desktop's existing LLM capabilities for complex reasoning
+- **Maintains Lightweight Server**: Server focuses solely on file operations and data management
+- **Follows MCP Best Practices**: Prompts guide LLM clients through structured workflows
+
+#### Core GTD Prompts
+- `inbox_clarification` - Guides analysis and categorization of inbox items
+- `weekly_review` - Structures comprehensive weekly review processes
+- `project_decomposition` - Breaks projects into actionable next steps
+- `daily_planning` - Assists with context-based task prioritization
+- `stall_detection` - Identifies and addresses inactive projects
+- `context_switching` - Suggests tasks for current work context
+
+#### Workflow Pattern
+1. User invokes GTD prompt with current state as arguments
+2. Claude Desktop receives structured instructions for GTD methodology
+3. Claude uses resources to read GTD data and tools to perform actions
+4. Complex reasoning happens client-side using Claude's intelligence
+5. Results follow proper GTD principles without server-side LLM requirements
 
 ### Target Integration
 The server is designed to work with:

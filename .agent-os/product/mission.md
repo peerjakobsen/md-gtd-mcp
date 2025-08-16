@@ -28,6 +28,20 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
    - Seeks data-driven insights about their productivity patterns
    - Willing to adapt workflow for significant efficiency gains
 
+4. **The Professional Manager**:
+   - Manages team of 5-15 direct reports with regular 1:1 meetings
+   - Conducts career development discussions and performance reviews
+   - Needs consistent structure for recurring management activities
+   - Wants to follow organization-specific procedures and best practices
+   - Values automation that incorporates company SOPs and methodologies
+
+5. **The Sales Professional**:
+   - Manages 10-30 active sales opportunities using methodologies like MEDDPICC
+   - Tracks complex B2B sales cycles with multiple stakeholders
+   - Needs to follow qualification frameworks and sales processes consistently
+   - Requires integration of sales methodology with personal GTD system
+   - Values workflow automation that maintains CRM-like rigor in Obsidian
+
 ## The Problem
 
 1. **Inbox Processing Bottleneck**: GTD practitioners spend 30-60 minutes daily categorizing captured thoughts, meeting notes, and ideas. This manual process is repetitive and prone to inconsistency, leading to delayed processing and decision fatigue.
@@ -67,6 +81,7 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 
 ### Project Management
 - **Project Decomposition**: Break down high-level projects into specific, actionable next steps
+- **SOP-Enhanced Workflows**: Integrate organization-specific Standard Operating Procedures (SOPs) with project workflows for consistent execution of business processes like 1:1 meetings, sales methodologies (MEDDPICC), reporting cycles, and career development discussions
 - **Stall Detection**: Identify projects without recent activity or clear next actions
 - **Dependency Mapping**: Recognize and highlight project dependencies and prerequisites
 - **Progress Tracking**: Monitor project advancement through completed actions and milestones
@@ -83,6 +98,5 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 - **LLM-Optimized Tool Descriptions**: Enhanced tool descriptions with GTD context, usage examples, and behavioral annotations for optimal Claude Desktop understanding and interaction
 - **Pre-configured GTD Workflow Prompts**: Ready-to-use prompt templates for weekly reviews, inbox processing, project planning, and daily planning that guide Claude through proper GTD methodology
 - **Context-Aware Tool Suggestions**: Intelligent tool adaptation based on user context (meeting notes vs email processing) with specialized parameter defaults and descriptions
-- **Interactive Processing with Elicitation**: Structured data gathering during GTD workflows using interactive prompts to ensure comprehensive capture of task details, project information, and review criteria
 - **Markdown Preservation**: Maintain all data in human-readable markdown format with clear version history
 - **Customizable Templates**: Allow users to adapt AI suggestions to match their specific GTD implementation and preferences

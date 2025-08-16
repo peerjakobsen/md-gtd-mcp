@@ -75,7 +75,6 @@
 - LLMs require detailed context and usage guidance to effectively use tools
 - FastMCP provides proven patterns (tool descriptions, prompts, annotations) for LLM interaction
 - GTD methodology benefits from structured prompts and guided workflows
-- Interactive features (elicitation, sampling) enable complex decision-making workflows
 - Proper tool organization and naming improves discoverability and usage
 
 **Implementation Details**:
@@ -84,7 +83,6 @@
 - Meta information indicates GTD phases and usage frequency
 - Pre-configured prompts for common GTD workflows (weekly review, inbox processing)
 - Tool transformation patterns for context-specific adaptations
-- Interactive elicitation for structured data gathering during GTD processes
 
 **Consequences**:
 - Positive: Optimal Claude Desktop integration and user experience
@@ -108,6 +106,8 @@
 3. Support both formats equally with configuration options
 
 **Decision**: Recognize standard Obsidian task format (`- [ ]` / `- [x]`) as primary method, with #task tags as optional metadata enhancement.
+
+**IMPORTANT**: This decision is partially superseded by Decision D006 for inbox files. D006 requires that inbox files NEVER have #task tags during capture phase. This decision (D004) applies only to non-inbox GTD files (projects.md, next-actions.md, etc.) where #task tags remain required for Obsidian Tasks plugin compatibility.
 
 **Rationale**:
 - Standard Obsidian format is widely adopted and expected by users
@@ -205,3 +205,161 @@
 - Positive: Natural workflow for AI assistant collaboration
 - Neutral: Requires updating existing TaskExtractor logic and test fixtures
 - Negative: May require user education about new inbox behavior
+
+### D007: Convert Read-Only Operations to MCP Resources
+- **Status**: Proposed
+- **Date**: 2025-08-16
+- **Category**: Architecture
+- **Stakeholders**: Development Team, Product Owner
+
+**Context**: Current implementation uses MCP tools for read-only file operations (list_gtd_files, read_gtd_file, read_gtd_files). Analysis of MCP protocol documentation reveals that these operations should be resources rather than tools.
+
+**Alternatives**:
+1. Keep current tool-based implementation
+2. Convert to resources following MCP protocol best practices
+3. Hybrid approach with both tools and resources
+
+**Proposal**: Convert read-only file operations to MCP resources using resource templates.
+
+**Rationale**:
+- MCP protocol distinguishes between tools (actions) and resources (read-only data)
+- Resources are semantically correct for file reading operations
+- Resources support readOnlyHint annotation for better LLM understanding
+- Resource templates enable natural URI-based access patterns
+- Better caching and performance characteristics
+- Aligns with REST-like principles (GET vs POST operations)
+- FastMCP documentation shows file operations commonly implemented as resources
+
+**Implementation Details**:
+- Convert list_gtd_files to resource template: `gtd://{vault_path}/files`
+- Add filtered variant: `gtd://{vault_path}/files/{file_type}`
+- Convert read_gtd_file to resource template: `gtd://{vault_path}/file/{file_path}`
+- Convert read_gtd_files to resource template: `gtd://{vault_path}/content`
+- Add filtered content variant: `gtd://{vault_path}/content/{file_type}`
+- Add resource annotations: readOnlyHint: true, idempotentHint: true
+- Update tests to use resource reading instead of tool calling
+
+**Consequences**:
+- Positive: Semantically correct use of MCP protocol
+- Positive: Better LLM understanding through readOnlyHint annotations
+- Positive: Improved caching and performance characteristics
+- Positive: More intuitive URI-based access patterns
+- Positive: Follows REST-like design principles
+- Neutral: Requires updating existing implementation and tests
+- Negative: Breaking change for current tool-based clients
+- Negative: Additional implementation effort for resource templates
+
+### D008: Use MCP Prompts for LLM-Powered GTD Workflows
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Architecture
+- **Stakeholders**: Development Team, Product Owner, End Users
+
+**Context**: Initial roadmap considered implementing LLM capabilities within the MCP server requiring API access to Anthropic, OpenAI, or AWS Bedrock. This creates barriers for average Claude Desktop users who would need to configure API keys to use GTD automation features.
+
+**Alternatives**:
+1. Implement LLM processing within MCP server (requires API keys)
+2. Use MCP prompts to guide Claude Desktop's existing LLM capabilities
+3. Hybrid approach with both server-side and client-side LLM features
+
+**Decision**: Use MCP prompts to orchestrate GTD workflows through Claude Desktop's LLM intelligence, eliminating server-side LLM API requirements.
+
+**Rationale**:
+- MCP prompts are designed to guide LLM clients through complex workflows
+- Leverages Claude Desktop's existing intelligence without additional API costs
+- Removes barrier of API key configuration for average users
+- Keeps MCP server lightweight and focused on data/actions
+- Follows MCP protocol best practices for workflow orchestration
+- Enables sophisticated GTD reasoning without server complexity
+- Claude Desktop naturally handles multi-step reasoning and decision-making
+
+**Implementation Details**:
+- Design prompts for core GTD workflows:
+  - `inbox_clarification` - Analyze and categorize inbox items
+  - `weekly_review` - Structure comprehensive weekly review process
+  - `project_decomposition` - Break projects into actionable next steps
+  - `daily_planning` - Prioritize tasks based on context and energy
+  - `stall_detection` - Identify and address stalled projects
+  - `context_switching` - Suggest tasks for current context
+- Prompts accept GTD state as arguments (inbox items, projects, contexts)
+- Return structured instructions for Claude Desktop to follow
+- Guide Claude to use appropriate resources (read operations) and tools (write operations)
+- Implement proper GTD methodology through guided reasoning
+
+**Consequences**:
+- Positive: Zero API key requirements for end users
+- Positive: Leverages Claude Desktop's full LLM capabilities
+- Positive: Lightweight server focused on file operations
+- Positive: Natural workflow orchestration through prompts
+- Positive: Accessible to all Claude Desktop users
+- Positive: Follows MCP protocol design principles
+- Positive: Enables sophisticated GTD automation democratically
+- Neutral: Requires learning MCP prompt patterns and GTD methodology integration
+- Negative: Processing happens client-side rather than server-optimized environment
+
+### D009: SOP-Enhanced Prompts for Context-Aware GTD Workflows
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Feature Design
+- **Stakeholders**: Development Team, Professional Users, Enterprise Customers
+
+**Context**: Generic GTD prompts work well for general workflows but lack context for organization-specific procedures. Professional users need GTD workflows that incorporate their company's standard operating procedures (SOPs) for activities like 1:1 meetings, sales processes (MEDDPICC), reporting cycles, and other business-specific workflows.
+
+**Alternatives**:
+1. Keep prompts generic and rely on users to manually incorporate SOPs
+2. Build SOPs into prompt templates with complex project folder structures
+3. Use simple SOP linking with single projects.md file for easy maintenance
+4. Create SOP-specific tools rather than enhancing prompts
+
+**Decision**: Implement SOP-enhanced prompts using simple project-SOP linking via metadata in a single projects.md file, with SOPs stored as separate markdown files in GTD/SOPs/ folder.
+
+**Rationale**:
+- Enables context-aware workflows for professional and enterprise users
+- Maintains simplicity with single projects.md file approach
+- Users control SOP content directly in Obsidian for full customization
+- MCP prompts can dynamically incorporate relevant SOPs during processing
+- Bridges gap between generic GTD and organization-specific procedures
+- Supports enterprise adoption without complexity overhead
+- SOPs are reusable across multiple projects
+- Follows GTD principle of reducing friction and cognitive overhead
+
+**Implementation Details**:
+- Single `projects.md` file contains all projects with optional SOP references
+- Project metadata format: `sop: <sop-name>` to link to relevant procedure
+- SOPs stored in `GTD/SOPs/` folder as markdown files (e.g., MEDDPICC.md, 1-1-meetings.md)
+- MCP prompts read project SOPs and incorporate procedures into workflow guidance
+- SOP template creation tool provides starter templates for common procedures
+- SOP discovery system suggests relevant SOPs based on project patterns
+- Users maintain full control over SOP content through direct Obsidian editing
+
+**Standard SOP Template Structure**:
+All SOPs follow a standardized template with GTD-integrated sections to ensure reliable parsing and application by MCP prompts:
+
+1. **GTD Clarification Questions** - Standard questions for determining actionability, successful outcomes, next physical actions, required contexts (@home, @office, @calls), time estimates, and energy levels
+2. **Project Decomposition Template** - Standard subtasks for this type of work, dependencies to check, and common blockers to anticipate
+3. **Context Assignment Rules** - Default GTD contexts for this work type, context-specific considerations, and time-of-day preferences
+4. **Review Checkpoints** - What to check daily, weekly, and at key milestones for this type of project
+5. **Success Criteria** - Definition of done, quality gates, and deliverables checklist
+6. **Common Patterns** - Typical workflow sequence, best practices, and integration points with other systems
+7. **Anti-patterns to Avoid** - Common mistakes, warning signs of going off-track, and failure modes to prevent
+
+This structure ensures SOPs are actionable workflow guides rather than passive documentation, enabling MCP prompts to systematically apply organization-specific procedures while maintaining proper GTD methodology.
+
+**Example SOPs**:
+- `1-1-meetings.md` - Manager 1:1 meeting structure and follow-up patterns
+- `MEDDPICC.md` - Sales opportunity qualification methodology
+- `monthly-reports.md` - Recurring business report templates and requirements
+- `career-development.md` - Employee growth discussion frameworks
+- `code-review.md` - Technical review process and quality gates
+- `incident-response.md` - Issue handling and escalation procedures
+
+**Consequences**:
+- Positive: Enables organization-specific GTD implementations
+- Positive: Supports enterprise and professional use cases
+- Positive: Maintains user control over procedures and content
+- Positive: Creates reusable workflow patterns across projects
+- Positive: Simple structure reduces maintenance overhead
+- Positive: Natural fit with GTD weekly review processes
+- Neutral: Requires SOP creation and maintenance by users
+- Neutral: Can evolve to more complex structures if needed
+- Negative: Additional implementation complexity for SOP-prompt integration
