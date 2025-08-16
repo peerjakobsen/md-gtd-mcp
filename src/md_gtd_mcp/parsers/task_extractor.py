@@ -21,7 +21,7 @@ class TaskExtractor:
     DELEGATED_PATTERN = re.compile(r"👤(\w+)")
 
     # Obsidian Tasks plugin metadata patterns
-    TAG_PATTERN = re.compile(r"#(\w+)")
+    TAG_PATTERN = re.compile(r"#([\w-]+)")
     DUE_DATE_PATTERN = re.compile(r"📅(\d{4}-\d{2}-\d{2})")
     SCHEDULED_DATE_PATTERN = re.compile(r"⏳(\d{4}-\d{2}-\d{2})")
     START_DATE_PATTERN = re.compile(r"🛫(\d{4}-\d{2}-\d{2})")

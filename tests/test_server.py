@@ -607,16 +607,17 @@ status: active
         assert "next-actions" in file_types
         assert "context" in file_types
 
-        # Verify each file has required structure
+        # Verify each file has required metadata structure (no full content)
         for file_data in files:
             assert "file_path" in file_data
             assert "file_type" in file_data
-            assert "content" in file_data
-            assert "frontmatter" in file_data
-            assert "tasks" in file_data
-            assert "links" in file_data
             assert "task_count" in file_data
             assert "link_count" in file_data
+            # list_gtd_files should NOT include full content
+            assert "content" not in file_data
+            assert "tasks" not in file_data
+            assert "links" not in file_data
+            assert "frontmatter" not in file_data
 
         # Should not have suggestion when files exist
         assert "suggestion" not in result
@@ -763,7 +764,7 @@ status: active
         assert len(result["files"]) == 0
 
     def test_list_gtd_files_task_and_link_counts(self) -> None:
-        """Test that individual files include task and link counts."""
+        """Test that individual files include task and link counts (metadata only)."""
         from md_gtd_mcp.server import list_gtd_files_impl as list_gtd_files
 
         result = list_gtd_files(str(self.vault_path))
@@ -771,14 +772,477 @@ status: active
         assert result["status"] == "success"
         files = result["files"]
 
-        # Find inbox file and verify its counts
+        # Verify files have counts but no detailed content
+        for file_data in files:
+            assert isinstance(file_data["task_count"], int)
+            assert isinstance(file_data["link_count"], int)
+            assert file_data["task_count"] >= 0
+            assert file_data["link_count"] >= 0
+
+        # Verify that some files have non-zero counts (basic sanity check)
+        total_tasks = sum(f["task_count"] for f in files)
+        assert total_tasks > 0  # We added tasks to various files
+
+
+class TestReadGTDFiles:
+    """Test read_gtd_files MCP tool."""
+
+    def setup_method(self) -> None:
+        """Set up test vault directory with comprehensive GTD structure."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.vault_path = Path(self.temp_dir) / "test_vault"
+        self.vault_path.mkdir(parents=True)
+
+        # Create a complete GTD structure
+        setup_gtd_vault(str(self.vault_path))
+        self.gtd_path = self.vault_path / "gtd"
+
+        # Add sample content to various GTD files for testing
+        self._create_sample_content()
+
+    def _create_sample_content(self) -> None:
+        """Create comprehensive sample content across multiple GTD files."""
+        # Inbox with multiple tasks
+        inbox_path = self.gtd_path / "inbox.md"
+        inbox_content = """---
+status: active
+capture_date: 2025-01-15
+---
+
+# Inbox
+
+## Quick Capture
+
+- Research vacation destinations for spring break
+- [ ] Review quarterly budget report @computer #task
+- [ ] Confirm meeting attendance with team @calls #task
+- [ ] Pick up dry cleaning @errands #task
+
+## Ideas and Notes
+
+Check [[Project Alpha]] status and [[Project Beta]] dependencies.
+Visit [External Resource](https://example.com) for research.
+"""
+        inbox_path.write_text(inbox_content)
+
+        # Projects with complex structure
+        projects_path = self.gtd_path / "projects.md"
+        projects_content = """---
+status: active
+review_date: 2025-01-20
+---
+
+# Projects
+
+## Active Projects
+
+### Project Alpha
+- [ ] Define project scope @computer #task #high-priority
+- [ ] Schedule kickoff meeting @calls #task
+- [x] Research requirements @computer #task ✅2025-01-10
+
+### Project Beta
+- [ ] Review dependencies on [[Project Alpha]]
+- [ ] Create project timeline @computer #task
+- [ ] Set up project repository @computer #task #development
+
+## On Hold
+
+### Website Redesign
+- [x] Research design trends @computer #task ✅2025-01-05
+- [ ] Create wireframes @computer #task
+"""
+        projects_path.write_text(projects_content)
+
+        # Next Actions with priorities
+        next_actions_path = self.gtd_path / "next-actions.md"
+        next_actions_content = """---
+status: active
+---
+
+# Next Actions
+
+## High Priority
+
+- [ ] Submit expense report @computer #task #high-priority
+- [ ] Call insurance agent @calls #task #urgent
+
+## This Week
+
+- [ ] Update weekly status report @computer #task
+- [ ] Review team performance metrics @computer #task
+- [ ] Schedule quarterly planning meeting @calls #task
+
+## Someday
+
+- [ ] Organize digital photo library @computer #task #low-priority
+"""
+        next_actions_path.write_text(next_actions_content)
+
+        # Waiting For with tracking
+        waiting_path = self.gtd_path / "waiting-for.md"
+        waiting_content = """---
+status: active
+---
+
+# Waiting For
+
+## Pending Responses
+
+- [ ] Response from vendor about pricing @waiting #task
+- [ ] Approval from manager for vacation request @waiting #task
+- [ ] Client feedback on proposal draft @waiting #task
+
+## Follow-up Needed
+
+- [ ] Follow up with IT about server access @calls #task
+"""
+        waiting_path.write_text(waiting_content)
+
+        # Someday Maybe with categorization
+        someday_path = self.gtd_path / "someday-maybe.md"
+        someday_content = """---
+status: active
+---
+
+# Someday / Maybe
+
+## Personal Development
+
+- [ ] Learn Spanish language @self-development #task
+- [ ] Take photography course @learning #task
+
+## Travel Ideas
+
+- [ ] Plan trip to Japan @travel #task
+- [ ] Visit European museums @travel #task
+
+## Home Projects
+
+- [ ] Renovate home office @home #task #big-project
+- [ ] Install smart home system @home #task
+"""
+        someday_path.write_text(someday_content)
+
+        # Add content to context files
+        contexts_path = self.gtd_path / "contexts"
+
+        # @calls with additional tasks
+        calls_path = contexts_path / "@calls.md"
+        existing_content = calls_path.read_text()
+        calls_path.write_text(
+            existing_content + "\n- [ ] Schedule dentist appointment @calls #task\n"
+            "- [ ] Call bank about mortgage rates @calls #task #financial\n"
+        )
+
+        # @computer with project tasks
+        computer_path = contexts_path / "@computer.md"
+        existing_content = computer_path.read_text()
+        computer_path.write_text(
+            existing_content + "\n- [ ] Update LinkedIn profile @computer #task\n"
+            "- [ ] Backup important files @computer #task #maintenance\n"
+        )
+
+    def test_read_gtd_files_success(self) -> None:
+        """Test successfully reading GTD files with comprehensive data."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files(str(self.vault_path))
+
+        # Verify response structure
+        assert "status" in result
+        assert "files" in result
+        assert "vault_path" in result
+        assert "summary" in result
+        assert result["status"] == "success"
+        assert result["vault_path"] == str(self.vault_path)
+
+        # Verify comprehensive file listing
+        files = result["files"]
+        assert isinstance(files, list)
+        assert len(files) >= 9  # 5 standard + 4 context files
+
+        # Check that all GTD file types are included
+        file_types = [f["file_type"] for f in files]
+        assert "inbox" in file_types
+        assert "projects" in file_types
+        assert "next-actions" in file_types
+        assert "waiting-for" in file_types
+        assert "someday-maybe" in file_types
+        assert "context" in file_types
+
+        # Verify each file has complete structure
+        for file_data in files:
+            assert "file_path" in file_data
+            assert "file_type" in file_data
+            assert "content" in file_data
+            assert "frontmatter" in file_data
+            assert "tasks" in file_data
+            assert "links" in file_data
+            assert "task_count" in file_data
+            assert "link_count" in file_data
+
+        # Verify summary statistics
+        summary = result["summary"]
+        assert summary["total_files"] >= 9
+        assert summary["total_tasks"] >= 20  # We added many tasks
+        assert summary["total_links"] >= 3  # Project links and external links
+
+    def test_read_gtd_files_comprehensive_task_analysis(self) -> None:
+        """Test that all tasks across all files are properly extracted and analyzed."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files(str(self.vault_path))
+        assert result["status"] == "success"
+
+        files = result["files"]
+        all_tasks = []
+        for file_data in files:
+            all_tasks.extend(file_data["tasks"])
+
+        # Verify we have comprehensive task data
+        assert len(all_tasks) >= 20
+
+        # Check for specific task properties
+        high_priority_tasks = [
+            t for t in all_tasks if "#high-priority" in t.get("tags", [])
+        ]
+        assert len(high_priority_tasks) >= 2
+
+        completed_tasks = [t for t in all_tasks if t["completed"]]
+        assert len(completed_tasks) >= 2
+
+        context_tasks = [t for t in all_tasks if t.get("context")]
+        assert len(context_tasks) >= 10
+
+        # Verify task contexts are properly extracted
+        contexts = {t["context"] for t in context_tasks if t["context"]}
+        assert "@computer" in contexts
+        assert "@calls" in contexts
+        assert "@errands" in contexts
+
+    def test_read_gtd_files_comprehensive_link_analysis(self) -> None:
+        """Test that all links across all files are properly extracted."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files(str(self.vault_path))
+        assert result["status"] == "success"
+
+        files = result["files"]
+        all_links = []
+        for file_data in files:
+            all_links.extend(file_data["links"])
+
+        # Verify comprehensive link extraction
+        assert len(all_links) >= 5
+
+        # Check for different link types
+        wikilinks = [link for link in all_links if link["type"] == "wikilink"]
+        external_links = [link for link in all_links if link["type"] == "external"]
+        context_links = [link for link in all_links if link["target"].startswith("@")]
+
+        assert len(wikilinks) >= 2  # Project Alpha, Project Beta
+        assert len(external_links) >= 1  # Example.com
+        assert len(context_links) >= 4  # Context file references
+
+        # Verify specific project links
+        project_targets = {link["target"] for link in wikilinks}
+        assert "Project Alpha" in project_targets
+        assert "Project Beta" in project_targets
+
+    def test_read_gtd_files_empty_vault_suggests_setup(self) -> None:
+        """Test that tool suggests setup_gtd_vault when vault is empty."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        # Create empty vault
+        empty_vault = Path(self.temp_dir) / "empty_vault"
+        empty_vault.mkdir()
+
+        result = read_gtd_files(str(empty_vault))
+
+        # Should succeed but include helpful suggestion
+        assert result["status"] == "success"
+        assert len(result["files"]) == 0
+        assert result["summary"]["total_files"] == 0
+
+        # Should include suggestion to run setup_gtd_vault
+        assert "suggestion" in result
+        suggestion = result["suggestion"]
+        assert "setup_gtd_vault" in suggestion
+        assert "GTD structure" in suggestion or "gtd structure" in suggestion
+
+    def test_read_gtd_files_nonexistent_vault_suggests_setup(self) -> None:
+        """Test that tool suggests setup when vault directory doesn't exist."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        nonexistent_vault = str(Path(self.temp_dir) / "nonexistent_vault")
+
+        result = read_gtd_files(nonexistent_vault)
+
+        # Should succeed and include helpful suggestion
+        assert result["status"] == "success"
+        assert len(result["files"]) == 0
+        assert result["summary"]["total_files"] == 0
+
+        # Should include suggestion to run setup_gtd_vault
+        assert "suggestion" in result
+        suggestion = result["suggestion"]
+        assert "setup_gtd_vault" in suggestion
+        assert "create" in suggestion.lower() or "setup" in suggestion.lower()
+
+    def test_read_gtd_files_file_type_distribution(self) -> None:
+        """Test that files are properly distributed across GTD categories."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files(str(self.vault_path))
+        assert result["status"] == "success"
+
+        # Verify file type distribution in summary
+        summary = result["summary"]
+        files_by_type = summary["files_by_type"]
+
+        assert files_by_type.get("inbox", 0) >= 1
+        assert files_by_type.get("projects", 0) >= 1
+        assert files_by_type.get("next-actions", 0) >= 1
+        assert files_by_type.get("waiting-for", 0) >= 1
+        assert files_by_type.get("someday-maybe", 0) >= 1
+        assert files_by_type.get("context", 0) >= 4
+
+        # Verify task distribution by file type
+        tasks_by_type = summary["tasks_by_type"]
+        assert tasks_by_type.get("inbox", 0) >= 3
+        assert tasks_by_type.get("projects", 0) >= 6
+        assert tasks_by_type.get("next-actions", 0) >= 6
+        assert tasks_by_type.get("context", 0) >= 4
+
+    def test_read_gtd_files_invalid_vault_path(self) -> None:
+        """Test error handling for invalid vault paths."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files("")
+        assert result["status"] == "error"
+        assert "error" in result
+
+        result = read_gtd_files("   ")
+        assert result["status"] == "error"
+        assert "error" in result
+
+    def test_read_gtd_files_partial_gtd_structure(self) -> None:
+        """Test reading when only partial GTD structure exists."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        # Create vault with only some GTD files
+        partial_vault = Path(self.temp_dir) / "partial_vault"
+        partial_vault.mkdir()
+        gtd_path = partial_vault / "gtd"
+        gtd_path.mkdir()
+
+        # Create only inbox and projects files
+        inbox_path = gtd_path / "inbox.md"
+        inbox_path.write_text("# Inbox\n\n- [ ] Test task @calls #task")
+
+        projects_path = gtd_path / "projects.md"
+        projects_path.write_text("# Projects\n\n- [ ] Test project @computer #task")
+
+        result = read_gtd_files(str(partial_vault))
+
+        assert result["status"] == "success"
+        files = result["files"]
+        assert len(files) == 2
+
+        file_types = [f["file_type"] for f in files]
+        assert "inbox" in file_types
+        assert "projects" in file_types
+
+        # Should not suggest setup when some files exist
+        assert "suggestion" not in result
+
+    def test_read_gtd_files_comprehensive_content_validation(self) -> None:
+        """Test that file content is completely preserved and accessible."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        result = read_gtd_files(str(self.vault_path))
+        assert result["status"] == "success"
+
+        files = result["files"]
+
+        # Find inbox file and verify content preservation
         inbox_file = next((f for f in files if f["file_type"] == "inbox"), None)
         assert inbox_file is not None
-        assert inbox_file["task_count"] >= 2  # We added 2 tasks
-        assert inbox_file["link_count"] >= 1  # We added Project Alpha link
+        assert "Research vacation destinations" in inbox_file["content"]
+        assert "Project Alpha" in inbox_file["content"]
+        assert "example.com" in inbox_file["content"]
 
-        # Find projects file and verify its counts
+        # Verify frontmatter is properly parsed
+        assert inbox_file["frontmatter"]["status"] == "active"
+        assert "capture_date" in inbox_file["frontmatter"]["extra"]
+
+        # Find projects file and verify complex structure
         projects_file = next((f for f in files if f["file_type"] == "projects"), None)
         assert projects_file is not None
-        assert projects_file["task_count"] >= 4  # We added 4 tasks
-        assert projects_file["link_count"] >= 0
+        assert "Project Alpha" in projects_file["content"]
+        assert "Project Beta" in projects_file["content"]
+        assert "On Hold" in projects_file["content"]
+
+    def test_read_gtd_files_performance_with_many_files(self) -> None:
+        """Test that the tool handles larger numbers of files efficiently."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        # Add additional context files to simulate larger vault
+        contexts_path = self.gtd_path / "contexts"
+        additional_contexts = ["@office.md", "@phone.md", "@agenda.md", "@waiting.md"]
+
+        for context_file in additional_contexts:
+            context_path = contexts_path / context_file
+            content = (
+                f"# {context_file[1:-3].title()} Context\n\n"
+                f"- [ ] Sample task {context_file} #task\n"
+            )
+            context_path.write_text(content)
+
+        result = read_gtd_files(str(self.vault_path))
+
+        assert result["status"] == "success"
+        files = result["files"]
+        assert len(files) >= 13  # Original files + additional contexts
+
+        # Verify all context files are included
+        context_files = [f for f in files if f["file_type"] == "context"]
+        assert len(context_files) >= 8  # 4 original + 4 additional
+
+    def test_read_gtd_files_with_file_type_filter(self) -> None:
+        """Test reading GTD files with file type filtering."""
+        from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+        # Test filtering by inbox
+        result = read_gtd_files(str(self.vault_path), file_type="inbox")
+
+        assert result["status"] == "success"
+        files = result["files"]
+        assert len(files) >= 1
+        for file_data in files:
+            assert file_data["file_type"] == "inbox"
+            # Should include full content since this is read_gtd_files
+            assert "content" in file_data
+            assert "tasks" in file_data
+            assert "links" in file_data
+
+        # Test filtering by projects
+        result = read_gtd_files(str(self.vault_path), file_type="projects")
+
+        assert result["status"] == "success"
+        files = result["files"]
+        assert len(files) >= 1
+        for file_data in files:
+            assert file_data["file_type"] == "projects"
+            assert "content" in file_data
+
+        # Test filtering by context
+        result = read_gtd_files(str(self.vault_path), file_type="context")
+
+        assert result["status"] == "success"
+        files = result["files"]
+        assert len(files) >= 4  # @calls, @computer, @errands, @home
+        for file_data in files:
+            assert file_data["file_type"] == "context"
+            assert "content" in file_data

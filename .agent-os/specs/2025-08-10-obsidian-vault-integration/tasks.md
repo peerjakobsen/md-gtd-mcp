@@ -44,15 +44,19 @@
 - [x] 4.4 Implement read_gtd_file tool in server.py
 - [x] 4.5 Write tests for list_gtd_files MCP tool
 - [x] 4.6 Implement list_gtd_files tool in server.py
-- [ ] 4.7 Write tests for read_all_gtd_files MCP tool
-- [ ] 4.8 Implement read_all_gtd_files tool in server.py
-- [ ] 4.9 Write tests for GTDFrontmatter Pydantic conversion
-- [ ] 4.10 Convert GTDFrontmatter from dataclass to Pydantic BaseModel
+- [x] 4.7 Refactor list_gtd_files to return metadata only (file paths, types, counts)
+  - **REFACTOR**: Remove full content from list_gtd_files response
+  - **KEEP**: File metadata, task/link counts, summary statistics, filtering
+  - **PURPOSE**: Lightweight listing for GTD system overview
+- [x] 4.8 Write tests for read_gtd_files MCP tool (full content with optional filtering)
+- [x] 4.9 Implement read_gtd_files tool in server.py (comprehensive content reading)
+- [ ] 4.10 Write tests for GTDFrontmatter Pydantic conversion
+- [ ] 4.11 Convert GTDFrontmatter from dataclass to Pydantic BaseModel
   - **BENEFIT**: Built-in model_dump() for MCP tool serialization
   - **BENEFIT**: Automatic validation and JSON schema generation
   - **BENEFIT**: Better datetime handling for API responses
-- [ ] 4.11 Test MCP server startup with vault configuration
-- [ ] 4.12 Verify all MCP tool tests pass
+- [ ] 4.12 Test MCP server startup with vault configuration
+- [ ] 4.13 Verify all MCP tool tests pass
 
 ### 5. Integration testing and documentation
 - [ ] 5.1 Create comprehensive integration test with sample vault

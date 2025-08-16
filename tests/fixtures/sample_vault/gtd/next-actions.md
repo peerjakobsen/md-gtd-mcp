@@ -6,7 +6,7 @@ status: active
 
 ## Work
 
-- [ ] Draft project proposal for Q2 @computer #task
+- [ ] Draft project proposal for Q2 @computer #task #high-priority
 - [ ] Schedule team retrospective meeting @calls #task
 - [x] Review code changes for authentication ✅2025-01-05 #task
 - [ ] Update project documentation @computer #task
@@ -14,7 +14,7 @@ status: active
 - [ ] Review pull requests from team members @computer #task
 - [ ] Set up automated testing pipeline @computer #task
 - [ ] Update system backups configuration @computer #task
-- [ ] Call client about project status update @calls #task
+- [ ] Call client about project status update @calls #task #high-priority
 - [ ] Schedule quarterly performance review @calls #task
 - [ ] Follow up with vendor about delivery @calls #task
 - [ ] Finalize marketing materials @computer #task
