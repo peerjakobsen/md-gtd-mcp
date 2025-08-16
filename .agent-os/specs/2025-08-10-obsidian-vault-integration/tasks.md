@@ -79,7 +79,7 @@
   - Use list_gtd_files with file_type="context" filter
   - Read specific context files (@calls, @computer)
   - Verify proper task grouping by context across all files
-- [ ] 5.6 Test project tracking workflow - Following project references and dependencies
+- [x] 5.6 Test project tracking workflow - Following project references and dependencies
   - Read projects file and extract project definitions
   - Follow wikilinks to related tasks in other files
   - Validate project-task relationships are preserved

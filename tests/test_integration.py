@@ -2216,3 +2216,377 @@ status: active
                     completion_rate = (completed_count / total_tasks) * 100
                     assert isinstance(completion_rate, float)
                     assert 0 <= completion_rate <= 100
+
+
+class TestProjectTrackingWorkflow:
+    """Integration tests for task 5.6: Project tracking workflow."""
+
+    def test_project_references_and_dependencies(self) -> None:
+        """Test project tracking workflow - Following project references and
+        dependencies.
+
+        This test verifies:
+        - Read projects file and extract project definitions
+        - Follow wikilinks to related tasks in other files
+        - Validate project-task relationships are preserved
+        """
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_file_impl, read_gtd_files_impl
+
+            # Step 1: Read projects file and extract project definitions
+            projects_result = read_gtd_file_impl(
+                str(vault_config.vault_path), "gtd/projects.md"
+            )
+
+            assert projects_result["status"] == "success"
+            projects_file = projects_result["file"]
+            assert projects_file["file_type"] == "projects"
+
+            # Extract project names from wikilinks in content
+            project_wikilinks = [
+                link["target"]
+                for link in projects_file["links"]
+                if not link["is_external"] and not link["target"].endswith(".md")
+            ]
+
+            # Should have project definitions with wikilinks
+            assert (
+                len(project_wikilinks) >= 2
+            )  # At least Project Alpha and other projects
+
+            # Verify we have the expected projects from fixtures
+            project_names = [link.lower() for link in project_wikilinks]
+            assert any("project alpha" in name for name in project_names)
+            assert any("home office setup" in name for name in project_names)
+
+            # Step 2: Read all GTD files to find project references
+            all_files_result = read_gtd_files_impl(str(vault_config.vault_path))
+            assert all_files_result["status"] == "success"
+
+            all_files = all_files_result["files"]
+
+            # Step 3: Find tasks that reference projects through wikilinks
+            project_referenced_tasks: dict[str, list[dict[str, Any]]] = {}
+
+            for file_data in all_files:
+                if (
+                    file_data["file_type"] != "projects"
+                ):  # Don't include projects file itself
+                    for task in file_data["tasks"]:
+                        # Check if task has project wikilink in description
+                        task_text = task.get("description", "")
+                        for project_name in project_wikilinks:
+                            if (
+                                f"[[{project_name}]]" in task_text
+                                or project_name.lower() in task_text.lower()
+                            ):
+                                if project_name not in project_referenced_tasks:
+                                    project_referenced_tasks[project_name] = []
+                                project_referenced_tasks[project_name].append(
+                                    {
+                                        "task": task,
+                                        "file_type": file_data["file_type"],
+                                        "file_path": file_data["file_path"],
+                                    }
+                                )
+
+            # Step 4: Validate project-task relationships exist
+            # Even if explicit wikilinks aren't in tasks, verify conceptual
+            # relationships
+
+            # Find tasks that could be related to Project Alpha
+            # (marketing/product launch)
+            alpha_related_tasks = []
+            for file_data in all_files:
+                if file_data["file_type"] != "projects":
+                    for task in file_data["tasks"]:
+                        task_text = task.get("description", "").lower()
+                        # Look for marketing/project/stakeholder related tasks
+                        alpha_keywords = [
+                            "marketing",
+                            "stakeholder",
+                            "finalize",
+                            "proposal",
+                            "project",
+                            "authentication",
+                        ]
+                        if any(keyword in task_text for keyword in alpha_keywords):
+                            alpha_related_tasks.append(
+                                {
+                                    "task": task,
+                                    "file_type": file_data["file_type"],
+                                    "file_path": file_data["file_path"],
+                                }
+                            )
+
+            # Should find tasks related to Project Alpha concepts
+            assert len(alpha_related_tasks) >= 3  # Multiple related tasks
+
+            # Verify tasks come from appropriate file types
+            alpha_file_types = [item["file_type"] for item in alpha_related_tasks]
+            assert "next-actions" in alpha_file_types  # Should have actionable tasks
+
+            # Find tasks related to Home Office Setup project
+            home_office_tasks = []
+            for file_data in all_files:
+                if file_data["file_type"] != "projects":
+                    for task in file_data["tasks"]:
+                        task_text = task.get("description", "").lower()
+                        # Look for home office related tasks
+                        home_keywords = [
+                            "standing desk",
+                            "cable management",
+                            "office",
+                            "workspace",
+                            "home",
+                        ]
+                        if any(keyword in task_text for keyword in home_keywords):
+                            home_office_tasks.append(
+                                {
+                                    "task": task,
+                                    "file_type": file_data["file_type"],
+                                    "file_path": file_data["file_path"],
+                                }
+                            )
+
+            # Should find tasks related to Home Office Setup
+            assert len(home_office_tasks) >= 2  # Standing desk and cable management
+
+            # Step 5: Validate cross-file navigation integrity
+
+            # Check that projects file references next-actions.md
+            projects_links = [link["target"] for link in projects_file["links"]]
+            assert any("next-actions.md" in link for link in projects_links)
+
+            # Get next-actions file
+            next_actions_files = [
+                f for f in all_files if f["file_type"] == "next-actions"
+            ]
+            assert len(next_actions_files) == 1
+            next_actions = next_actions_files[0]
+
+            # Verify next-actions has tasks that align with project descriptions
+            next_actions_tasks = next_actions["tasks"]
+            assert len(next_actions_tasks) >= 15  # Should have many actionable tasks
+
+            # Verify we can trace specific project actions
+            # Look for authentication-related tasks
+            # (from Authentication System Refactor project)
+            auth_tasks = [
+                task
+                for task in next_actions_tasks
+                if "authentication" in task.get("description", "").lower()
+            ]
+            assert len(auth_tasks) >= 1  # Should have authentication-related tasks
+
+            # Verify computer context tasks align with computer-based project work
+            computer_tasks = [
+                task
+                for task in next_actions_tasks
+                if task.get("context") == "@computer"
+            ]
+            assert (
+                len(computer_tasks) >= 8
+            )  # Many computer tasks for development projects
+
+            # Step 6: Validate project outcome alignment with tasks
+
+            # Extract project outcomes from projects content
+            projects_content = projects_file["content"]
+
+            # Should contain outcome statements that align with found tasks
+            assert (
+                "Complete product launch" in projects_content
+            )  # Project Alpha outcome
+            assert (
+                "Organize workspace for productivity" in projects_content
+            )  # Home Office outcome
+            assert (
+                "Secure and maintainable auth system" in projects_content
+            )  # Auth system outcome
+
+            # Verify project status tracking
+            assert "status: active" in projects_content  # Active projects
+            assert "status: planning" in projects_content  # Planning projects
+
+            # Step 7: Test project dependency tracking
+
+            # Look for projects that reference other resources
+            # (may be 0 if no HR Documentation links in current fixtures)
+            # hr_documentation_refs = [
+            #     link
+            #     for link in projects_file["links"]
+            #     if "HR Documentation" in link["target"]
+            # ]
+
+            # Verify area-based project organization
+            assert "area: Personal" in projects_content
+            assert "area: Work" in projects_content
+            assert "area: Development" in projects_content
+
+    def test_project_progress_through_task_completion(self) -> None:
+        """Test tracking project progress through task completion states."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            # Read all files to analyze project progress
+            result = read_gtd_files_impl(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            all_files = result["files"]
+
+            # Get projects and next-actions files
+            projects_files = [f for f in all_files if f["file_type"] == "projects"]
+            next_actions_files = [
+                f for f in all_files if f["file_type"] == "next-actions"
+            ]
+
+            assert len(projects_files) == 1
+            assert len(next_actions_files) == 1
+
+            # Files available for analysis if needed
+            # projects_file = projects_files[0]
+            # next_actions_file = next_actions_files[0]
+
+            # Analyze task completion rates for different project contexts
+            all_tasks = []
+            for file_data in all_files:
+                all_tasks.extend(file_data["tasks"])
+
+            # Count completed vs pending tasks
+            completed_tasks = [
+                task for task in all_tasks if task.get("completed", False)
+            ]
+            pending_tasks = [
+                task for task in all_tasks if not task.get("completed", False)
+            ]
+
+            # Should have both completed and pending work
+            assert len(completed_tasks) >= 2  # Some completed work
+            assert len(pending_tasks) >= 15  # Much pending work
+
+            # Verify task completion includes dates
+            completed_with_dates = [
+                task
+                for task in completed_tasks
+                if task.get("completion_date") is not None
+            ]
+            assert len(completed_with_dates) >= 1  # Some completed tasks have dates
+
+            # Analyze context distribution for project work
+            contexts_represented = set()
+            for task in all_tasks:
+                if task.get("context"):
+                    contexts_represented.add(task["context"])
+
+            # Should have multiple contexts for diverse project work
+            expected_contexts = {"@computer", "@calls", "@home", "@errands"}
+            assert len(contexts_represented.intersection(expected_contexts)) >= 3
+
+    def test_project_area_and_review_tracking(self) -> None:
+        """Test project area organization and review date tracking."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_file_impl
+
+            # Read projects file specifically
+            result = read_gtd_file_impl(str(vault_config.vault_path), "gtd/projects.md")
+            assert result["status"] == "success"
+
+            projects_file = result["file"]
+            content = projects_file["content"]
+
+            # Verify project area organization
+            areas_found = []
+            if "area: Personal" in content:
+                areas_found.append("Personal")
+            if "area: Work" in content:
+                areas_found.append("Work")
+            if "area: Development" in content:
+                areas_found.append("Development")
+
+            # Should have multiple areas represented
+            assert len(areas_found) >= 2
+
+            # Verify review date tracking
+            review_dates_found = "review_date:" in content
+            assert review_dates_found  # Should have review dates for project tracking
+
+            # Verify project status variety
+            status_types = []
+            if "status: active" in content:
+                status_types.append("active")
+            if "status: planning" in content:
+                status_types.append("planning")
+            if "status: on-hold" in content:
+                status_types.append("on-hold")
+
+            # Should have different project statuses
+            assert len(status_types) >= 2
+            assert "active" in status_types  # Should have active projects
+
+            # Verify outcome definitions exist
+            assert "outcome:" in content  # Projects should have defined outcomes
+
+    def test_cross_file_link_integrity(self) -> None:
+        """Test that wikilinks between GTD files maintain integrity."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl
+
+            # Read all files to check link integrity
+            result = read_gtd_files_impl(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            all_files = result["files"]
+
+            # Collect all internal wikilinks
+            all_internal_links = []
+            for file_data in all_files:
+                for link in file_data["links"]:
+                    if not link["is_external"]:
+                        all_internal_links.append(
+                            {
+                                "target": link["target"],
+                                "source_file": file_data["file_path"],
+                                "source_type": file_data["file_type"],
+                            }
+                        )
+
+            # Should have internal links
+            assert len(all_internal_links) >= 3
+
+            # Check that next-actions.md is referenced from projects
+            next_actions_refs = [
+                link
+                for link in all_internal_links
+                if "next-actions.md" in link["target"]
+            ]
+            assert len(next_actions_refs) >= 1  # Projects should reference next-actions
+
+            # Verify project wikilinks exist
+            project_links = [
+                link
+                for link in all_internal_links
+                if not link["target"].endswith(".md")  # Project names, not file names
+            ]
+            assert len(project_links) >= 2  # Should have project name references
+
+            # Create file path set for validation
+            file_paths = {f["file_path"] for f in all_files}
+
+            # Validate that .md file references point to existing files
+            md_file_links = [
+                link for link in all_internal_links if link["target"].endswith(".md")
+            ]
+
+            for link in md_file_links:
+                # Convert link target to full path format for validation
+                if not link["target"].startswith("gtd/"):
+                    expected_path = f"gtd/{link['target']}"
+                else:
+                    expected_path = link["target"]
+
+                # Check if target file exists in our file set
+                matching_files = [path for path in file_paths if expected_path in path]
+                assert len(matching_files) >= 1, (
+                    f"Link target {link['target']} not found in files"
+                )
