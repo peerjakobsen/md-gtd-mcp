@@ -165,3 +165,43 @@
 - Positive: Clear separation of concerns between GTD phases
 - Neutral: Requires user education about GTD phase separation
 - Negative: Two-step process may feel more complex initially
+
+### D006: Inbox Task Tag Separation - Pure Capture Phase
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Architecture
+- **Stakeholders**: Development Team, End Users
+
+**Context**: Analysis of GTD methodology revealed that the inbox should be a pure capture zone where items don't yet have task metadata. Current implementation inconsistently requires #task tags in inbox, violating the principle that capture should be friction-free and clarification should be a separate conscious step.
+
+**Alternatives**:
+1. Continue current mixed approach with some inbox items having #task tags
+2. Require all inbox items to have #task tags for consistency
+3. Implement pure capture phase - inbox items NEVER have #task tags until clarified
+
+**Decision**: Implement pure GTD capture phase where inbox items NEVER have #task tags. The #task tag is only added during the Clarify phase when items are consciously processed and moved to appropriate GTD files.
+
+**Rationale**:
+- Aligns perfectly with David Allen's GTD methodology (capture first, clarify later)
+- Creates clear distinction between captured and clarified items
+- Enables true friction-free capture without metadata decisions
+- #task tag becomes a processing status indicator (processed vs unprocessed)
+- Better Obsidian Tasks plugin integration (only queries truly actionable items)
+- Matches natural AI assistant behavior (dumps thoughts without immediate categorization)
+
+**Implementation Details**:
+- TaskExtractor becomes file-type aware:
+  - Inbox files: Recognize ALL `- [ ]` items without #task requirement
+  - Other GTD files: Maintain #task requirement for Obsidian Tasks compatibility
+- New `clarify_inbox_item()` MCP tool adds #task tag during processing
+- Test fixtures updated to remove #task from inbox.md
+- Processing workflow: Capture (no #task) → Clarify (add #task) → Organize (move to appropriate file)
+
+**Consequences**:
+- Positive: True GTD methodology implementation with proper phase separation
+- Positive: Clear processing status indication via #task presence
+- Positive: Friction-free capture experience
+- Positive: Better integration with Obsidian Tasks plugin (cleaner task queries)
+- Positive: Natural workflow for AI assistant collaboration
+- Neutral: Requires updating existing TaskExtractor logic and test fixtures
+- Negative: May require user education about new inbox behavior

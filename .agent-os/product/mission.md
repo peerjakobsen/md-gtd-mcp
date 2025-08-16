@@ -40,7 +40,7 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 
 ## Key Principles
 
-1. **GTD Phase Integrity**: Respect the five GTD phases (Capture → Clarify → Organize → Reflect → Engage) by providing appropriate tools for each phase. Quick capture requires minimal friction, while clarification phase provides intelligent context and category suggestions.
+1. **GTD Phase Integrity**: Respect the five GTD phases (Capture → Clarify → Organize → Reflect → Engage) by providing appropriate tools for each phase. Quick capture requires minimal friction with NO metadata decisions (inbox items NEVER have #task tags). Clarification phase consciously adds #task tags, contexts, and categories, creating clear distinction between captured and processed items.
 
 2. **Universal Compatibility**: Support standard Obsidian markdown format (`- [ ]` tasks) as the primary interface, ensuring compatibility with existing tools like Claude Desktop and other AI assistants while maintaining optional enhanced functionality.
 
