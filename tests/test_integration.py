@@ -384,3 +384,272 @@ class TestNewUserOnboardingWorkflow:
             # Context files should contain no tasks (they have query syntax)
             for context_file in context_files:
                 assert len(context_file.tasks) == 0
+
+
+class TestExistingUserMigrationWorkflow:
+    """Integration tests for task 5.2: Existing user migration workflow."""
+
+    def test_partial_vault_completion_without_data_loss(self) -> None:
+        """Test existing user migration workflow.
+
+        Partial vault completion without data loss.
+
+        This test verifies:
+        - Create vault with some existing GTD files containing user data
+        - Run setup_gtd_vault and verify it preserves existing content
+        - Confirm new files are created only where missing
+        """
+        with tempfile.TemporaryDirectory() as temp_dir:
+            vault_path = Path(temp_dir) / "existing_user_vault"
+            vault_path.mkdir()
+            gtd_path = vault_path / "gtd"
+            gtd_path.mkdir()
+
+            # Step 1: Create partial GTD structure with existing user data
+
+            # Create inbox with user content
+            inbox_content = """---
+status: active
+last_reviewed: 2025-08-15
+---
+
+# Inbox
+
+## My Important Captured Items
+
+- Research new productivity app
+- Call dentist for appointment
+- [ ] Review contract terms @computer #task
+- Buy birthday gift for Mom
+- [ ] Schedule car maintenance @calls #task
+
+## Meeting Notes
+
+Meeting with Sarah yesterday about Q3 goals.
+Important points to follow up on.
+
+Check [[Project Beta]] progress this week.
+"""
+            inbox_path = gtd_path / "inbox.md"
+            inbox_path.write_text(inbox_content)
+
+            # Create projects with user projects
+            projects_content = """---
+status: active
+last_reviewed: 2025-08-14
+---
+
+# Projects
+
+## My Active Projects
+
+### [[Project Beta]]
+- outcome: Launch new marketing campaign
+- status: active
+- area: Marketing
+- review_date: 2025-09-01
+
+**Progress Notes:**
+- Completed initial research phase
+- Working with design team on mockups
+- Scheduled client presentation for next week
+
+**Next Actions:** See [[next-actions.md]]
+
+### [[Personal Finance Review]]
+- outcome: Organize budget and investments
+- status: planning
+- area: Personal
+
+**Notes:**
+- Need to review quarterly statements
+- Research new investment options
+"""
+            projects_path = gtd_path / "projects.md"
+            projects_path.write_text(projects_content)
+
+            # Create contexts directory with one existing context file
+            contexts_path = gtd_path / "contexts"
+            contexts_path.mkdir()
+
+            calls_content = """# 📞 Calls Context
+
+## My Call Tasks
+
+- [ ] Call insurance company about claim @calls #task
+- [ ] Schedule follow-up with client Smith @calls #task
+- [ ] Contact vendor about pricing @calls #task
+
+```tasks
+not done
+description includes @calls
+sort by due
+```
+"""
+            calls_path = contexts_path / "@calls.md"
+            calls_path.write_text(calls_content)
+
+            # Verify initial state - only partial files exist
+            assert inbox_path.exists()
+            assert projects_path.exists()
+            assert calls_path.exists()
+            assert not (gtd_path / "next-actions.md").exists()
+            assert not (gtd_path / "waiting-for.md").exists()
+            assert not (gtd_path / "someday-maybe.md").exists()
+            assert not (contexts_path / "@computer.md").exists()
+            assert not (contexts_path / "@errands.md").exists()
+            assert not (contexts_path / "@home.md").exists()
+
+            # Read original content to verify it's preserved later
+            original_inbox = inbox_path.read_text()
+            original_projects = projects_path.read_text()
+            original_calls = calls_path.read_text()
+
+            # Step 2: Run setup_gtd_vault on partially populated vault
+            setup_result = setup_gtd_vault(str(vault_path))
+
+            # Verify setup succeeded
+            assert setup_result["status"] == "success"
+            assert setup_result["vault_path"] == str(vault_path)
+
+            # Step 3: Verify existing content was preserved (CRITICAL)
+            preserved_inbox = inbox_path.read_text()
+            preserved_projects = projects_path.read_text()
+            preserved_calls = calls_path.read_text()
+
+            assert preserved_inbox == original_inbox
+            assert preserved_projects == original_projects
+            assert preserved_calls == original_calls
+
+            # Step 4: Verify missing files were created
+            expected_created = {
+                "gtd/next-actions.md",
+                "gtd/waiting-for.md",
+                "gtd/someday-maybe.md",
+                "gtd/contexts/@computer.md",
+                "gtd/contexts/@errands.md",
+                "gtd/contexts/@home.md",
+            }
+
+            created_set = set(setup_result["created"])
+            assert expected_created.issubset(created_set)
+
+            # Step 5: Verify existing files were NOT recreated
+            expected_already_existed = {
+                "gtd/",  # gtd directory
+                "gtd/contexts/",  # contexts directory
+                "gtd/inbox.md",
+                "gtd/projects.md",
+                "gtd/contexts/@calls.md",
+            }
+
+            already_existed_set = set(setup_result["already_existed"])
+            assert expected_already_existed.issubset(already_existed_set)
+
+            # Step 6: Verify complete structure now exists
+            assert (gtd_path / "next-actions.md").exists()
+            assert (gtd_path / "waiting-for.md").exists()
+            assert (gtd_path / "someday-maybe.md").exists()
+            assert (contexts_path / "@computer.md").exists()
+            assert (contexts_path / "@errands.md").exists()
+            assert (contexts_path / "@home.md").exists()
+
+            # Step 7: Test vault reading preserves user data
+            vault_config = VaultConfig(vault_path)
+            vault_reader = VaultReader(vault_config)
+
+            all_files = vault_reader.read_all_gtd_files()
+
+            # Should have all file types now
+            file_types = {f.file_type for f in all_files}
+            expected_types = {
+                "inbox",
+                "projects",
+                "next-actions",
+                "waiting-for",
+                "someday-maybe",
+                "context",
+            }
+            assert expected_types == file_types
+
+            # Should have exactly 9 files (5 standard + 4 context)
+            assert len(all_files) == 9
+
+            # Step 8: Verify user data preservation in parsed files
+            inbox_files = [f for f in all_files if f.file_type == "inbox"]
+            assert len(inbox_files) == 1
+            inbox_file = inbox_files[0]
+
+            # User's frontmatter should be preserved
+            assert inbox_file.frontmatter.status == "active"
+            assert "last_reviewed" in inbox_file.frontmatter.extra
+            # Date gets parsed as datetime.date object
+            import datetime
+
+            assert inbox_file.frontmatter.extra["last_reviewed"] == datetime.date(
+                2025, 8, 15
+            )
+
+            # User's content should be preserved
+            assert "My Important Captured Items" in inbox_file.content
+            assert "Meeting with Sarah yesterday" in inbox_file.content
+            assert "Project Beta" in inbox_file.content
+
+            # User's tasks should be extracted properly
+            assert len(inbox_file.tasks) == 2  # Two #task items
+            task_texts = [task.text for task in inbox_file.tasks]
+            assert "Review contract terms" in task_texts[0]
+            assert "Schedule car maintenance" in task_texts[1]
+
+            # Projects file should preserve user projects
+            project_files = [f for f in all_files if f.file_type == "projects"]
+            assert len(project_files) == 1
+            projects_file = project_files[0]
+
+            assert "Project Beta" in projects_file.content
+            assert "Launch new marketing campaign" in projects_file.content
+            assert "Personal Finance Review" in projects_file.content
+            assert "Completed initial research phase" in projects_file.content
+
+            # Context file should preserve user tasks
+            context_files = [f for f in all_files if f.file_type == "context"]
+            calls_files = [f for f in context_files if "@calls" in f.path]
+            assert len(calls_files) == 1
+            calls_file = calls_files[0]
+
+            assert "My Call Tasks" in calls_file.content
+            assert len(calls_file.tasks) == 3  # User's call tasks
+            call_task_texts = [task.text for task in calls_file.tasks]
+            assert "Call insurance company about claim" in call_task_texts[0]
+
+            # Step 9: Verify newly created files have proper templates
+            next_actions_files = [f for f in all_files if f.file_type == "next-actions"]
+            assert len(next_actions_files) == 1
+            next_actions_file = next_actions_files[0]
+            assert "# Next Actions" in next_actions_file.content
+            assert "context-organized" in next_actions_file.content.lower()
+
+            waiting_files = [f for f in all_files if f.file_type == "waiting-for"]
+            assert len(waiting_files) == 1
+            waiting_file = waiting_files[0]
+            assert "# Waiting For" in waiting_file.content
+            assert "delegated items" in waiting_file.content.lower()
+
+            someday_files = [f for f in all_files if f.file_type == "someday-maybe"]
+            assert len(someday_files) == 1
+            someday_file = someday_files[0]
+            assert "# Someday / Maybe" in someday_file.content
+            assert "future possibilities" in someday_file.content.lower()
+
+            # New context files should have query templates
+            new_context_files = [
+                f
+                for f in context_files
+                if f.path.endswith(("@computer.md", "@errands.md", "@home.md"))
+            ]
+            assert len(new_context_files) == 3
+
+            for context_file in new_context_files:
+                assert "```tasks" in context_file.content
+                assert "not done" in context_file.content
+                assert "```" in context_file.content
