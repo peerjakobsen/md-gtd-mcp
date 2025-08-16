@@ -24,12 +24,12 @@
   - Implement resource handler integration for each template
   - Add comprehensive docstrings with GTD context and usage examples
   - Ensure FastMCP resource registration and URI routing
-- [ ] 1.5 Write tests for integration scenarios and migration compatibility
+- [x] 1.5 Write tests for integration scenarios and migration compatibility
   - Test resource access through MCP client simulation
   - Test data consistency between tools and resources during migration
   - Test performance with various vault sizes and configurations
   - Test filtered resource variants work correctly with file type parameters
-- [ ] 1.6 Update integration tests to use resources instead of tools
+- [x] 1.6 Update integration tests to use resources instead of tools
   - Modify existing integration tests in `tests/test_integration.py` to use resources
   - Update test scenarios to access `gtd://` URIs for read operations
   - Verify integration test suite passes with resource-based approach
