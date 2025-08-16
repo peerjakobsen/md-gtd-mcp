@@ -75,7 +75,7 @@
   - Call read_gtd_files for full vault content
   - Verify aggregation of tasks by context and project
   - Validate identification of completed vs pending items
-- [ ] 5.5 Test context-based task filtering - Finding tasks for focused work sessions
+- [x] 5.5 Test context-based task filtering - Finding tasks for focused work sessions
   - Use list_gtd_files with file_type="context" filter
   - Read specific context files (@calls, @computer)
   - Verify proper task grouping by context across all files

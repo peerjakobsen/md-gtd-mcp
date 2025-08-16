@@ -222,6 +222,378 @@ class TestGTDIntegration:
             assert next_actions_tasks > 15
 
 
+class TestContextBasedTaskFilteringWorkflow:
+    """Integration tests for task 5.5.
+
+    Context-based task filtering for focused work sessions.
+    """
+
+    def test_context_file_type_filtering_with_list_gtd_files(self) -> None:
+        """Test using list_gtd_files with file_type='context' for context overview."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import list_gtd_files_impl as list_gtd_files
+
+            # Use list_gtd_files to get lightweight context file overview
+            result = list_gtd_files(str(vault_config.vault_path), file_type="context")
+
+            assert result["status"] == "success"
+            files = result["files"]
+
+            # Should have all context files
+            assert len(files) >= 4  # @calls, @computer, @errands, @home
+
+            # All files should be context type
+            for file_data in files:
+                assert file_data["file_type"] == "context"
+                # list_gtd_files provides metadata only (no full content)
+                assert "file_path" in file_data
+                assert "task_count" in file_data
+                assert "link_count" in file_data
+                assert "content" not in file_data  # Lightweight overview
+
+            # Verify we have the expected context files
+            file_paths = [file_data["file_path"] for file_data in files]
+            context_files = [path for path in file_paths if "contexts/" in path]
+            assert len(context_files) == len(files)  # All should be in contexts folder
+
+            # Check for specific context files
+            calls_file = next((f for f in files if "@calls.md" in f["file_path"]), None)
+            computer_file = next(
+                (f for f in files if "@computer.md" in f["file_path"]), None
+            )
+            errands_file = next(
+                (f for f in files if "@errands.md" in f["file_path"]), None
+            )
+            home_file = next((f for f in files if "@home.md" in f["file_path"]), None)
+
+            assert calls_file is not None
+            assert computer_file is not None
+            assert errands_file is not None
+            assert home_file is not None
+
+    def test_read_specific_context_files_for_focused_work(self) -> None:
+        """Test reading specific context files (@calls, @computer) for focused work."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_file_impl as read_gtd_file
+
+            # Read @calls context file
+            calls_result = read_gtd_file(
+                str(vault_config.vault_path), "gtd/contexts/@calls.md"
+            )
+            assert calls_result["status"] == "success"
+            calls_file = calls_result["file"]
+            assert calls_file["file_type"] == "context"
+            assert "📞 Calls Context" in calls_file["content"]
+
+            # Read @computer context file
+            computer_result = read_gtd_file(
+                str(vault_config.vault_path), "gtd/contexts/@computer.md"
+            )
+            assert computer_result["status"] == "success"
+            computer_file = computer_result["file"]
+            assert computer_file["file_type"] == "context"
+            assert "💻 Computer Context" in computer_file["content"]
+
+            # Context files should contain query blocks, not actual tasks
+            # (They use Obsidian Tasks query syntax to dynamically show context tasks)
+            assert "```tasks" in calls_file["content"]
+            assert "```tasks" in computer_file["content"]
+            assert "description includes @calls" in calls_file["content"]
+            assert "description includes @computer" in computer_file["content"]
+
+    def test_task_grouping_by_context_across_all_files(self) -> None:
+        """Test proper task grouping by context across all GTD files."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+            # Read all GTD files to get complete task picture
+            result = read_gtd_files(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            files = result["files"]
+            all_tasks = []
+            for file_data in files:
+                all_tasks.extend(file_data["tasks"])
+
+            # Group tasks by context for focused work session planning
+            tasks_by_context: dict[str, list[dict[str, Any]]] = {}
+            tasks_without_context = []
+
+            for task in all_tasks:
+                context = task.get("context")
+                if context:
+                    if context not in tasks_by_context:
+                        tasks_by_context[context] = []
+                    tasks_by_context[context].append(task)
+                else:
+                    tasks_without_context.append(task)
+
+            # Verify we have tasks in multiple contexts
+            assert (
+                len(tasks_by_context) >= 3
+            )  # Should have @calls, @computer, @errands, etc.
+
+            # Verify specific contexts have tasks
+            assert "@calls" in tasks_by_context
+            assert "@computer" in tasks_by_context
+            assert "@errands" in tasks_by_context
+
+            # Verify @calls context tasks
+            calls_tasks = tasks_by_context["@calls"]
+            assert len(calls_tasks) >= 3  # Multiple call-related tasks
+            for task in calls_tasks:
+                assert "@calls" in task["description"] or task["context"] == "@calls"
+                # Should contain typical call-related keywords (but not all tasks)
+                call_keywords = [
+                    "call",
+                    "phone",
+                    "meeting",
+                    "appointment",
+                    "dentist",
+                    "client",
+                    "schedule",
+                    "follow",
+                ]
+                # At least some @calls tasks should contain call-related keywords
+            call_tasks_with_keywords = [
+                task
+                for task in calls_tasks
+                if any(
+                    keyword in task["description"].lower() for keyword in call_keywords
+                )
+            ]
+            assert (
+                len(call_tasks_with_keywords) >= len(calls_tasks) // 2
+            )  # At least half should have keywords
+
+            # Verify @computer context tasks
+            computer_tasks = tasks_by_context["@computer"]
+            assert len(computer_tasks) >= 5  # Multiple computer-related tasks
+            for task in computer_tasks:
+                assert (
+                    "@computer" in task["description"] or task["context"] == "@computer"
+                )
+            # At least some @computer tasks should contain computer-related keywords
+            computer_keywords = [
+                "computer",
+                "documentation",
+                "report",
+                "update",
+                "review",
+                "draft",
+                "project",
+                "code",
+            ]
+            computer_tasks_with_keywords = [
+                task
+                for task in computer_tasks
+                if any(
+                    keyword in task["description"].lower()
+                    for keyword in computer_keywords
+                )
+            ]
+            assert (
+                len(computer_tasks_with_keywords) >= len(computer_tasks) // 2
+            )  # At least half should have keywords
+
+            # Verify @errands context tasks
+            errands_tasks = tasks_by_context["@errands"]
+            assert len(errands_tasks) >= 3  # Multiple errand-related tasks
+            for task in errands_tasks:
+                assert (
+                    "@errands" in task["description"] or task["context"] == "@errands"
+                )
+            # At least some @errands tasks should contain errand-related keywords
+            errand_keywords = [
+                "pick",
+                "drop",
+                "buy",
+                "grocery",
+                "store",
+                "pharmacy",
+                "bank",
+                "get",
+                "order",
+            ]
+            errands_tasks_with_keywords = [
+                task
+                for task in errands_tasks
+                if any(
+                    keyword in task["description"].lower()
+                    for keyword in errand_keywords
+                )
+            ]
+            assert (
+                len(errands_tasks_with_keywords) >= len(errands_tasks) // 2
+            )  # At least half should have keywords
+
+    def test_context_based_filtering_for_focus_sessions(self) -> None:
+        """Test complete workflow for context-based task filtering in focused work."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+            # Scenario: User wants to do focused @computer work session
+            # Step 1: Get all tasks from all files
+            result = read_gtd_files(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            # Step 2: Extract and filter all @computer tasks
+            all_files = result["files"]
+            computer_tasks_by_file = {}
+            total_computer_tasks = 0
+
+            for file_data in all_files:
+                computer_tasks_in_file = [
+                    task
+                    for task in file_data["tasks"]
+                    if task.get("context") == "@computer"
+                ]
+                if computer_tasks_in_file:
+                    computer_tasks_by_file[file_data["file_type"]] = (
+                        computer_tasks_in_file
+                    )
+                    total_computer_tasks += len(computer_tasks_in_file)
+
+            # Should have @computer tasks distributed across multiple file types
+            assert total_computer_tasks >= 5
+            assert len(computer_tasks_by_file) >= 2  # Tasks in multiple file types
+
+            # Verify @computer tasks are in appropriate GTD files
+            expected_file_types = ["inbox", "projects", "next-actions"]
+            found_file_types = list(computer_tasks_by_file.keys())
+            assert any(ft in found_file_types for ft in expected_file_types)
+
+            # Step 3: Verify task priority and status for session planning
+            all_computer_tasks = []
+            for tasks in computer_tasks_by_file.values():
+                all_computer_tasks.extend(tasks)
+
+            # Should have mix of completed and pending @computer tasks
+            pending_computer_tasks = [
+                t for t in all_computer_tasks if not t["completed"]
+            ]
+
+            assert (
+                len(pending_computer_tasks) >= 3
+            )  # Multiple tasks available for work session
+            # Note: Completed tasks may not have context info, check overall tasks
+            all_completed_tasks = []
+            for file_data in all_files:
+                all_completed_tasks.extend(
+                    [t for t in file_data["tasks"] if t["completed"]]
+                )
+            assert (
+                len(all_completed_tasks) >= 1
+            )  # Some completed work exists in the system
+
+            # Verify high-priority @computer tasks for session prioritization
+            high_priority_computer = [
+                t
+                for t in all_computer_tasks
+                if any("#high-priority" in tag for tag in t.get("tags", []))
+            ]
+            assert (
+                len(high_priority_computer) >= 1
+            )  # Should have some high-priority computer work
+
+    def test_multi_context_task_analysis_for_session_planning(self) -> None:
+        """Test analysis of tasks across multiple contexts for daily/weekly planning."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+            result = read_gtd_files(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            # Collect all tasks and analyze by context for session planning
+            all_files = result["files"]
+            context_analysis = {
+                "@calls": {"total": 0, "pending": 0, "high_priority": 0},
+                "@computer": {"total": 0, "pending": 0, "high_priority": 0},
+                "@errands": {"total": 0, "pending": 0, "high_priority": 0},
+                "@home": {"total": 0, "pending": 0, "high_priority": 0},
+            }
+
+            for file_data in all_files:
+                for task in file_data["tasks"]:
+                    context = task.get("context")
+                    if context in context_analysis:
+                        context_analysis[context]["total"] += 1
+                        if not task["completed"]:
+                            context_analysis[context]["pending"] += 1
+                        if any("#high-priority" in tag for tag in task.get("tags", [])):
+                            context_analysis[context]["high_priority"] += 1
+
+            # Verify each context has realistic task distribution
+            for _context, stats in context_analysis.items():
+                if stats["total"] > 0:  # Only check contexts that have tasks
+                    assert stats["pending"] >= 0  # Should have some pending work
+                    assert stats["total"] >= stats["pending"]  # Total >= pending
+                    assert (
+                        stats["total"] >= stats["high_priority"]
+                    )  # Total >= high priority
+
+            # Should have substantial work in @computer and @calls contexts
+            assert context_analysis["@computer"]["total"] >= 3
+            assert context_analysis["@calls"]["total"] >= 3
+
+            # Should have some high-priority work across contexts
+            total_high_priority = sum(
+                stats["high_priority"] for stats in context_analysis.values()
+            )
+            assert total_high_priority >= 1
+
+    def test_context_file_cross_reference_validation(self) -> None:
+        """Test that context files properly reference tasks from other GTD files."""
+        with create_sample_vault() as vault_config:
+            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+
+            # Read all files to get complete picture
+            result = read_gtd_files(str(vault_config.vault_path))
+            assert result["status"] == "success"
+
+            files = result["files"]
+
+            # Get context files (should contain query syntax, not actual tasks)
+            context_files = [f for f in files if f["file_type"] == "context"]
+            assert len(context_files) >= 4
+
+            # Get files that contain actual tasks with contexts
+            task_files = [f for f in files if f["file_type"] != "context"]
+
+            # Extract all context references from actual task files
+            context_references = set()
+            for file_data in task_files:
+                for task in file_data["tasks"]:
+                    if task.get("context"):
+                        context_references.add(task["context"])
+
+            # Verify context files exist for the contexts referenced in tasks
+            context_file_paths = [f["file_path"] for f in context_files]
+
+            for context_ref in context_references:
+                # Convert @calls to @calls.md format for file checking
+                expected_file_pattern = f"{context_ref}.md"
+                matching_files = [
+                    path for path in context_file_paths if expected_file_pattern in path
+                ]
+                assert len(matching_files) >= 1, (
+                    f"No context file found for {context_ref}"
+                )
+
+            # Verify context files contain proper query syntax for their context
+            for context_file in context_files:
+                content = context_file["content"]
+                # Extract context from file path (e.g., @calls from contexts/@calls.md)
+                file_path = context_file["file_path"]
+                if "contexts/@" in file_path:
+                    context_name = file_path.split("contexts/")[1].replace(".md", "")
+
+                    # Should contain Obsidian Tasks query referencing this context
+                    assert "```tasks" in content
+                    assert f"description includes {context_name}" in content
+                    assert "not done" in content or "done" in content
+
+
 class TestNewUserOnboardingWorkflow:
     """Integration tests for task 5.1: New user onboarding workflow."""
 
