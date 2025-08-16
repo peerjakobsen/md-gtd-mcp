@@ -93,3 +93,75 @@
 - Positive: Provides foundation for advanced AI-assisted GTD features
 - Neutral: Additional implementation complexity and documentation requirements
 - Negative: Increased initial development effort for comprehensive descriptions and prompts
+
+### D004: Task Recognition Strategy
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Architecture
+- **Stakeholders**: Development Team, End Users
+
+**Context**: Real-world testing with Claude Desktop revealed that requiring #task tags for all task recognition creates incompatibility with standard Obsidian workflows and existing AI tools that naturally create tasks in standard markdown format.
+
+**Alternatives**:
+1. Maintain strict #task tag requirement for all tasks
+2. Recognize standard Obsidian format (`- [ ]`) as primary with optional #task support
+3. Support both formats equally with configuration options
+
+**Decision**: Recognize standard Obsidian task format (`- [ ]` / `- [x]`) as primary method, with #task tags as optional metadata enhancement.
+
+**Rationale**:
+- Standard Obsidian format is widely adopted and expected by users
+- Claude Desktop and other AI tools naturally create tasks in standard format
+- #task requirement creates unnecessary friction and incompatibility
+- Optional #task support maintains enhanced functionality when desired
+- Aligns with principle of least surprise for Obsidian users
+
+**Implementation Details**:
+- Remove mandatory #task tag requirement from TaskExtractor._has_task_tag()
+- Primary task detection based on `- [ ]` and `- [x]` patterns
+- #task tags treated as optional metadata for enhanced categorization
+- Maintain backward compatibility with existing #task tagged content
+
+**Consequences**:
+- Positive: Better compatibility with Claude Desktop and AI assistants
+- Positive: Follows standard Obsidian conventions users expect
+- Positive: Reduces friction for quick task capture
+- Positive: Maintains optional enhanced functionality
+- Neutral: Requires updating existing task detection logic
+- Negative: May initially detect more items as tasks than intended
+
+### D005: GTD Phase Separation for Context Assignment
+- **Status**: Decided
+- **Date**: 2025-08-16
+- **Category**: Methodology
+- **Stakeholders**: Product Owner, End Users
+
+**Context**: Analysis of Claude Desktop's natural task creation revealed that contexts (@home, @computer, etc.) are not added during initial capture, which aligns with proper GTD methodology where contexts are assigned during the Clarify phase, not Capture phase.
+
+**Alternatives**:
+1. Require contexts on all tasks at capture time
+2. Make contexts optional but encourage during capture
+3. Strictly separate Capture (no contexts required) and Clarify (contexts assigned) phases
+
+**Decision**: Implement strict GTD phase separation where Capture phase requires no contexts and Clarify phase guides context assignment.
+
+**Rationale**:
+- Follows David Allen's original GTD methodology correctly
+- Reduces friction during quick capture (key GTD principle)
+- Aligns with how AI assistants naturally create inbox items
+- Enables proper workflow from Capture → Clarify → Organize → Reflect → Engage
+- Provides opportunity for intelligent context suggestion during Clarify
+
+**Implementation Details**:
+- Inbox capture tools accept tasks without context requirements
+- Separate "process_inbox" tool guides Clarify phase with context suggestions
+- Clear tool descriptions indicate which GTD phase each tool supports
+- Enhanced prompts guide users through proper GTD phase transitions
+
+**Consequences**:
+- Positive: Proper GTD methodology implementation
+- Positive: Reduced friction for quick capture
+- Positive: Natural workflow for AI assistant integration
+- Positive: Clear separation of concerns between GTD phases
+- Neutral: Requires user education about GTD phase separation
+- Negative: Two-step process may feel more complex initially

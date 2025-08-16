@@ -15,6 +15,8 @@
 - [ ] Obsidian Vault Integration (M) - Read markdown files, parse frontmatter and links
 - [ ] File System Navigation (S) - Browse GTD folder structure and find relevant files
 - [ ] Basic Markdown Parsing (M) - Extract tasks, projects, and GTD categories from markdown
+- [ ] Flexible Task Recognition (M) - Recognize standard Obsidian task format (`- [ ]`) without requiring #task tags. Maintain compatibility with existing tools like Claude Desktop while supporting optional metadata tags for enhanced functionality
+- [ ] Inbox Capture Tool (S) - MCP tool for adding items directly to inbox without requiring contexts or detailed metadata. Follows GTD quick-capture principle where contexts are assigned during Clarify phase, not Capture phase
 - [ ] Simple Categorization Logic (L) - Suggest GTD categories for inbox items using basic heuristics
 - [ ] MCP Tool Descriptions & Annotations (M) - Enhanced tool descriptions with GTD context, usage examples, and behavioral hints (readOnlyHint, destructiveHint, idempotentHint) to guide LLM behavior. Tools include meta information indicating GTD phase (capture/clarify/organize/reflect/engage) and typical usage frequency
 - [ ] MCP Prompts for GTD Workflows (M) - Pre-configured prompt templates using @mcp.prompt decorator for common GTD workflows: weekly_review, inbox_processing, project_planning, daily_planning. Each prompt provides structured guidance to help Claude understand specific GTD methodology steps and decision criteria
@@ -30,11 +32,13 @@
 - Processes multiple inbox items efficiently
 
 **Features**:
-- [ ] Advanced Text Analysis (L) - NLP-based extraction of actions, contexts, and priorities from text with automatic context detection (@home, @office, @calls, @errands)
+- [ ] Advanced Text Analysis (L) - NLP-based extraction of actions, contexts, and priorities from text with automatic context detection (@home, @office, @calls, @errands). Focus on Clarify phase analysis rather than Capture phase requirements
+- [ ] Intelligent Context Assignment (M) - Suggest appropriate GTD contexts during Clarify phase based on task content analysis. Respects GTD methodology by NOT requiring contexts during initial capture
+- [ ] Process Inbox Tool (L) - Guide transition from Capture to Clarify phase. Analyze inbox items and suggest GTD categories, contexts, and priority assignments with explanations
 - [ ] Project Decomposition Engine (XL) - Break high-level projects into specific, actionable tasks
 - [ ] Stall Detection System (M) - Identify projects without recent activity or clear next actions
 - [ ] Batch Inbox Processing (L) - Handle multiple captured thoughts simultaneously with consistent logic
-- [ ] Context & Priority Recognition (L) - Identify GTD contexts (@calls, @errands) and priority indicators
+- [ ] Context & Priority Recognition (L) - Identify GTD contexts (@calls, @errands) and priority indicators during appropriate GTD phases
 - [ ] Intelligent Tool Naming & Organization (S) - GTD-specific tool names (process_inbox, capture_item, review_projects) with proper categorization and tags for LLM understanding
 - [ ] Context-Aware Tool Transformation (M) - Dynamic tool adaptation using Tool.from_tool() patterns to create specialized versions based on user context (e.g., transform generic "process_item" into "process_meeting_notes" or "process_email_capture" with appropriate parameter defaults)
 - [ ] Template System (M) - Customizable templates for different project types and workflows
