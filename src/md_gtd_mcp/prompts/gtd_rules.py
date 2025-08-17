@@ -398,6 +398,14 @@ class GTDRuleEngine:
         except ImportError:
             self.advanced_matcher = None
 
+        # Initialize hybrid pattern analyzer (Task 2.6)
+        try:
+            from .pattern_analyzer import GTDPatternAnalyzer
+
+            self.pattern_analyzer: GTDPatternAnalyzer | None = GTDPatternAnalyzer()
+        except ImportError:
+            self.pattern_analyzer = None
+
     def get_context_patterns(self) -> dict[str, list[str]]:
         """Get all context keyword patterns."""
         return self.patterns.CONTEXT_PATTERNS.copy()
@@ -672,3 +680,241 @@ class GTDRuleEngine:
                     return time_category
 
         return None
+
+    def analyze_comprehensive(self, text: str) -> dict[str, Any]:
+        """
+        Comprehensive analysis using hybrid pattern analyzer (Task 2.6).
+
+        Combines spaCy linguistic analysis, rapidfuzz fuzzy matching, and
+        textstat complexity scoring for intelligent GTD categorization hints.
+
+        Returns:
+            Detailed analysis with pattern matches, confidence scores,
+            and categorization recommendations for MCP prompt inclusion.
+        """
+        if not text or not text.strip():
+            return self._get_empty_analysis_result()
+
+        # Use hybrid pattern analyzer if available
+        if self.pattern_analyzer is not None:
+            return self.pattern_analyzer.analyze(text)
+
+        # Fallback to basic analysis
+        return self._get_basic_analysis_result(text)
+
+    def get_two_minute_indicators(self, text: str) -> dict[str, Any]:
+        """
+        Detect two-minute rule indicators using advanced pattern matching.
+
+        Uses rapidfuzz for fuzzy keyword matching and textstat for complexity.
+        Returns structured indicators for MCP prompt guidance.
+        """
+        if not self.pattern_analyzer:
+            # Fallback to basic detection
+            is_two_minute = self.detect_two_minute_task(text)
+            return {
+                "is_two_minute": is_two_minute,
+                "confidence": 0.5 if is_two_minute else 0.0,
+                "method": "basic_keywords",
+                "indicators": [],
+            }
+
+        # Use advanced two-minute analyzer
+        matches = self.pattern_analyzer.two_minute_analyzer.analyze(text)
+
+        return {
+            "is_two_minute": len(matches) > 0,
+            "confidence": max([m.confidence for m in matches], default=0.0),
+            "method": "hybrid_analysis",
+            "indicators": [m.explanation for m in matches],
+            "matches": [self.pattern_analyzer._match_to_dict(m) for m in matches],
+        }
+
+    def get_project_complexity_indicators(self, text: str) -> dict[str, Any]:
+        """
+        Detect project complexity using spaCy patterns and textstat metrics.
+
+        Identifies verb+noun patterns, multi-step indicators, and complexity
+        scores for intelligent project vs. next-action categorization.
+        """
+        if not self.pattern_analyzer:
+            # Fallback to basic detection
+            is_project = self.detect_project_indicators(text)
+            return {
+                "is_project": is_project,
+                "confidence": 0.5 if is_project else 0.0,
+                "method": "basic_keywords",
+                "complexity_factors": [],
+            }
+
+        # Use advanced project analyzer
+        matches = self.pattern_analyzer.project_analyzer.analyze(text)
+
+        return {
+            "is_project": len(matches) > 0,
+            "confidence": max([m.confidence for m in matches], default=0.0),
+            "method": "hybrid_analysis",
+            "complexity_factors": [m.explanation for m in matches],
+            "matches": [self.pattern_analyzer._match_to_dict(m) for m in matches],
+        }
+
+    def get_delegation_indicators(self, text: str) -> dict[str, Any]:
+        """
+        Detect delegation patterns using spaCy dependency parsing.
+
+        Identifies waiting/pending structures and delegation verbs with
+        person entities for waiting-for categorization guidance.
+        """
+        if not self.pattern_analyzer:
+            # Fallback to basic detection
+            is_delegation = self.detect_delegation_indicators(text)
+            return {
+                "is_delegation": is_delegation,
+                "confidence": 0.5 if is_delegation else 0.0,
+                "method": "basic_keywords",
+                "delegation_patterns": [],
+            }
+
+        # Use advanced delegation analyzer
+        matches = self.pattern_analyzer.delegation_analyzer.analyze(text)
+
+        return {
+            "is_delegation": len(matches) > 0,
+            "confidence": max([m.confidence for m in matches], default=0.0),
+            "method": "hybrid_analysis",
+            "delegation_patterns": [m.explanation for m in matches],
+            "matches": [self.pattern_analyzer._match_to_dict(m) for m in matches],
+        }
+
+    def get_priority_urgency_indicators(self, text: str) -> dict[str, Any]:
+        """
+        Detect priority and urgency patterns using phrase matching.
+
+        Identifies ASAP, urgent, deadline patterns with fuzzy matching
+        for deadline variations and typo tolerance.
+        """
+        if not self.pattern_analyzer:
+            # Fallback to basic detection
+            priority = self.estimate_priority_hints(text)
+            return {
+                "priority_level": priority,
+                "confidence": 0.5 if priority else 0.0,
+                "method": "basic_keywords",
+                "urgency_indicators": [],
+            }
+
+        # Use advanced priority analyzer
+        matches = self.pattern_analyzer.priority_analyzer.analyze(text)
+
+        # Determine priority level from matches
+        priority_level = None
+        if matches:
+            # Look for priority level in match metadata
+            for match in matches:
+                if "PRIORITY_HIGH" in match.explanation:
+                    priority_level = "high"
+                    break
+                elif "PRIORITY_MEDIUM" in match.explanation:
+                    priority_level = "medium"
+                    break
+                elif "PRIORITY_LOW" in match.explanation:
+                    priority_level = "low"
+                    break
+
+        return {
+            "priority_level": priority_level,
+            "confidence": max([m.confidence for m in matches], default=0.0),
+            "method": "hybrid_analysis",
+            "urgency_indicators": [m.explanation for m in matches],
+            "matches": [self.pattern_analyzer._match_to_dict(m) for m in matches],
+        }
+
+    def build_enhanced_prompt_context(self, text: str) -> dict[str, Any]:
+        """
+        Build enhanced GTD context for MCP prompts with advanced pattern analysis.
+
+        Combines static GTD rules with intelligent pattern detection to provide
+        comprehensive guidance for Claude Desktop's LLM reasoning.
+        """
+        base_context = self.build_prompt_context()
+
+        if not text or not text.strip():
+            return base_context
+
+        # Add advanced analysis if available
+        if self.pattern_analyzer:
+            analysis = self.analyze_comprehensive(text)
+
+            base_context.update(
+                {
+                    "pattern_analysis": analysis,
+                    "intelligent_hints": {
+                        "two_minute_indicators": self.get_two_minute_indicators(text),
+                        "project_complexity": self.get_project_complexity_indicators(
+                            text
+                        ),
+                        "delegation_patterns": self.get_delegation_indicators(text),
+                        "priority_urgency": self.get_priority_urgency_indicators(text),
+                    },
+                    "context_suggestions_advanced": (
+                        self.get_context_suggestions_with_explanations(text)
+                    ),
+                    "categorization_confidence": analysis.get("confidence", 0.0),
+                    "recommended_category": analysis.get(
+                        "primary_category", "next-action"
+                    ),
+                }
+            )
+        else:
+            # Basic analysis fallback
+            base_context.update(
+                {
+                    "basic_hints": {
+                        "two_minute_task": self.detect_two_minute_task(text),
+                        "project_indicators": self.detect_project_indicators(text),
+                        "delegation_indicators": self.detect_delegation_indicators(
+                            text
+                        ),
+                        "priority_hints": self.estimate_priority_hints(text),
+                        "time_hints": self.estimate_time_hints(text),
+                    },
+                    "context_suggestions_basic": self.suggest_contexts_for_text(text),
+                }
+            )
+
+        return base_context
+
+    def _get_empty_analysis_result(self) -> dict[str, Any]:
+        """Get empty analysis result structure."""
+        if self.pattern_analyzer:
+            return self.pattern_analyzer._empty_result()
+
+        return {
+            "text": "",
+            "primary_category": "next-action",
+            "confidence": 0.0,
+            "matches": [],
+            "recommendations": {
+                "suggested_category": "next-action",
+                "confidence_level": "low",
+            },
+        }
+
+    def _get_basic_analysis_result(self, text: str) -> dict[str, Any]:
+        """Get basic analysis result using simple keyword matching."""
+        return {
+            "text": text,
+            "primary_category": "next-action",
+            "confidence": 0.3,
+            "matches": [],
+            "recommendations": {
+                "suggested_category": "next-action",
+                "confidence_level": "low",
+                "method": "basic_keywords",
+            },
+            "basic_indicators": {
+                "two_minute": self.detect_two_minute_task(text),
+                "project": self.detect_project_indicators(text),
+                "delegation": self.detect_delegation_indicators(text),
+            },
+        }
