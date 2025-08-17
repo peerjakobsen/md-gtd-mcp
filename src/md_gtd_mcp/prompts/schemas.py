@@ -46,10 +46,14 @@ class InboxItem(BaseModel):
     """Represents a captured item in the GTD inbox for processing."""
 
     text: str = Field(..., description="The captured thought or item text")
-    line_number: int | None = Field(None, description="Line number in inbox file")
-    captured_date: datetime | None = Field(None, description="When item was captured")
+    line_number: int | None = Field(
+        default=None, description="Line number in inbox file"
+    )
+    captured_date: datetime | None = Field(
+        default=None, description="When item was captured"
+    )
     source: str | None = Field(
-        None, description="Source of capture (meeting, email, etc.)"
+        default=None, description="Source of capture (meeting, email, etc.)"
     )
 
     @field_validator("text")
@@ -74,7 +78,9 @@ class NewProject(BaseModel):
     first_next_action: str = Field(
         ..., description="First actionable step for the project"
     )
-    context: GTDContext | None = Field(None, description="Context for the first action")
+    context: GTDContext | None = Field(
+        default=None, description="Context for the first action"
+    )
     reasoning: str = Field(..., description="Why this should be a new project")
 
 

@@ -45,6 +45,11 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from md_gtd_mcp.prompts.core_prompts import (
+    batch_process_inbox_prompt,
+    inbox_clarification_prompt,
+    quick_categorize_prompt,
+)
 from md_gtd_mcp.services.inbox_capture import capture_inbox_item as capture_item_impl
 from md_gtd_mcp.services.resource_handler import ResourceHandler
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault as setup_vault_impl
@@ -434,6 +439,55 @@ async def read_content_filtered_resource(vault_path: str, file_type: str) -> str
 
     result = resource_handler.get_content(vault_path, file_type)
     return json.dumps(result, indent=2)
+
+
+# Register GTD Workflow Prompts
+@mcp.prompt(
+    name="inbox_clarification",
+    description=(
+        "Analyzes inbox items and suggests GTD categorization following "
+        "David Allen's methodology with detailed reasoning"
+    ),
+    tags={"core", "inbox", "categorization", "clarify"},
+    meta={"gtd_phase": "clarify", "usage_frequency": "high", "version": "1.0"},
+)
+def inbox_clarification(
+    inbox_item: str,
+    existing_projects: list[str] | None = None,
+    common_contexts: list[str] | None = None,
+) -> str:
+    """Prompt for comprehensive GTD inbox item clarification and categorization."""
+    return inbox_clarification_prompt(inbox_item, existing_projects, common_contexts)
+
+
+@mcp.prompt(
+    name="quick_categorize",
+    description=(
+        "Fast categorization for obvious inbox items requiring minimal analysis"
+    ),
+    tags={"core", "quick", "categorization", "clarify"},
+    meta={"gtd_phase": "clarify", "usage_frequency": "high", "version": "1.0"},
+)
+def quick_categorize(inbox_item: str) -> str:
+    """Prompt for rapid categorization of simple, clear-cut inbox items."""
+    return quick_categorize_prompt(inbox_item)
+
+
+@mcp.prompt(
+    name="batch_process_inbox",
+    description=(
+        "Process multiple inbox items efficiently with grouping and consistency"
+    ),
+    tags={"core", "batch", "inbox", "clarify"},
+    meta={"gtd_phase": "clarify", "usage_frequency": "medium", "version": "1.0"},
+)
+def batch_process_inbox(
+    inbox_items: list[str],
+    existing_projects: list[str] | None = None,
+    max_items: int = 20,
+) -> str:
+    """Prompt for batch processing multiple inbox items with intelligent grouping."""
+    return batch_process_inbox_prompt(inbox_items, existing_projects, max_items)
 
 
 def main() -> None:
