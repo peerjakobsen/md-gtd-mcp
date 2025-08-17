@@ -30,11 +30,14 @@ class TaskExtractor:
     RECURRENCE_PATTERN = re.compile(r"🔁([^#\s]+(?:\s+[^#\s]+)*?)(?=\s+#|\s*$)")
 
     @classmethod
-    def extract_tasks(cls, text: str) -> list[GTDTask]:
+    def extract_tasks(cls, text: str, file_type: str | None = None) -> list[GTDTask]:
         """Extract all GTD tasks from markdown text.
 
         Args:
             text: Markdown text content
+            file_type: Optional file type to determine task recognition behavior.
+                      When file_type="inbox", all checkbox items are recognized.
+                      For other file types, #task tag is required.
 
         Returns:
             List of GTDTask objects
@@ -46,21 +49,24 @@ class TaskExtractor:
         lines = text.split("\n")
 
         for line_num, line in enumerate(lines, 1):
-            if task := cls._parse_task_line(line, line_num):
+            if task := cls._parse_task_line(line, line_num, file_type):
                 tasks.append(task)
 
         return tasks
 
     @classmethod
-    def _parse_task_line(cls, line: str, line_number: int) -> GTDTask | None:
+    def _parse_task_line(
+        cls, line: str, line_number: int, file_type: str | None = None
+    ) -> GTDTask | None:
         """Parse a single line for task content.
 
         Args:
             line: Single line of text
             line_number: Line number in source text
+            file_type: Optional file type to determine task recognition behavior
 
         Returns:
-            GTDTask object if line contains a task with #task tag, None otherwise
+            GTDTask object if line contains a valid task, None otherwise
         """
         match = cls.TASK_LINE_PATTERN.match(line)
         if not match:
@@ -68,8 +74,8 @@ class TaskExtractor:
 
         _, checkbox_state, content = match.groups()
 
-        # Check if this line contains #task tag (case insensitive)
-        if not cls._has_task_tag(content):
+        # Check if this line contains #task tag based on file type
+        if not cls._has_task_tag(content, file_type):
             return None
 
         # Parse completion status
@@ -88,15 +94,23 @@ class TaskExtractor:
         return GTDTask(**task_data)
 
     @classmethod
-    def _has_task_tag(cls, content: str) -> bool:
-        """Check if content contains #task tag (case insensitive).
+    def _has_task_tag(cls, content: str, file_type: str | None = None) -> bool:
+        """Check if content contains #task tag based on file type.
 
         Args:
             content: Task content to check
+            file_type: Optional file type to determine task recognition behavior.
+                      When file_type="inbox", always returns True.
+                      For other file types, checks for #task tag.
 
         Returns:
-            True if #task tag is present
+            True if task should be recognized based on file type and content
         """
+        # For inbox files, recognize all checkbox items without #task requirement
+        if file_type == "inbox":
+            return True
+
+        # For all other file types, require #task tag (case insensitive)
         tags = cls.TAG_PATTERN.findall(content)
         return any(tag.lower() == "task" for tag in tags)
 

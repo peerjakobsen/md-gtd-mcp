@@ -3,17 +3,17 @@
 ## Task Breakdown
 
 ### 1. Enhance TaskExtractor for File-Type Aware Recognition
-- [ ] 1.1 Write tests for file-type aware task recognition behavior
+- [x] 1.1 Write tests for file-type aware task recognition behavior
   - Test inbox files recognize ALL `- [ ]` items without #task requirement
   - Test non-inbox files maintain existing #task tag requirement
   - Test backward compatibility when no file_type parameter provided
   - Test edge cases: empty files, malformed tasks, mixed content
-- [ ] 1.2 Add optional file_type parameter to TaskExtractor.extract_tasks() method
-- [ ] 1.3 Implement inbox-specific recognition logic in TaskExtractor._parse_task_line()
+- [x] 1.2 Add optional file_type parameter to TaskExtractor.extract_tasks() method
+- [x] 1.3 Implement inbox-specific recognition logic in TaskExtractor._parse_task_line()
   - Skip #task tag requirement when file_type="inbox"
   - Maintain existing logic for all other file types
-- [ ] 1.4 Update TaskExtractor._has_task_tag() to respect file_type parameter
-- [ ] 1.5 Verify all TaskExtractor tests pass with enhanced behavior
+- [x] 1.4 Update TaskExtractor._has_task_tag() to respect file_type parameter
+- [x] 1.5 Verify all TaskExtractor tests pass with enhanced behavior
 
 ### 2. Update MarkdownParser Integration
 - [ ] 2.1 Write tests for MarkdownParser passing file_type to TaskExtractor
