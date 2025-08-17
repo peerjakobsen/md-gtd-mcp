@@ -16,13 +16,13 @@
 - [x] 1.5 Verify all TaskExtractor tests pass with enhanced behavior
 
 ### 2. Update MarkdownParser Integration
-- [ ] 2.1 Write tests for MarkdownParser passing file_type to TaskExtractor
+- [x] 2.1 Write tests for MarkdownParser passing file_type to TaskExtractor
   - Test that detect_file_type() output is correctly passed to TaskExtractor
   - Test inbox.md files get parsed with inbox-specific task recognition
   - Test projects.md, next-actions.md maintain existing behavior
-- [ ] 2.2 Modify MarkdownParser.parse_file() to pass detected file_type to TaskExtractor.extract_tasks()
-- [ ] 2.3 Verify detect_file_type() function correctly identifies all GTD file types
-- [ ] 2.4 Verify all MarkdownParser integration tests pass
+- [x] 2.2 Modify MarkdownParser.parse_file() to pass detected file_type to TaskExtractor.extract_tasks()
+- [x] 2.3 Verify detect_file_type() function correctly identifies all GTD file types
+- [x] 2.4 Verify all MarkdownParser integration tests pass
 
 ### 3. Implement Inbox Capture Tool
 - [ ] 3.1 Write tests for capture_inbox_item MCP tool functionality

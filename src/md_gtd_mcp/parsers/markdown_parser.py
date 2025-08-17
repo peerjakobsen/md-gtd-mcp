@@ -42,14 +42,14 @@ class MarkdownParser:
         # Extract title from content or filename
         title = cls._extract_title(content_without_frontmatter, path)
 
-        # Extract tasks using TaskExtractor
-        tasks = TaskExtractor.extract_tasks(content_without_frontmatter)
+        # Detect file type from path
+        file_type = detect_file_type(path)
+
+        # Extract tasks using TaskExtractor with file type for phase-aware recognition
+        tasks = TaskExtractor.extract_tasks(content_without_frontmatter, file_type)
 
         # Extract links using LinkExtractor
         links = LinkExtractor.extract_links(content_without_frontmatter)
-
-        # Detect file type from path
-        file_type = detect_file_type(path)
 
         return GTDFile(
             path=str(path),

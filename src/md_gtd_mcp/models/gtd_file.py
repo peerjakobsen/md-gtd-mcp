@@ -82,7 +82,7 @@ def detect_file_type(path: Path) -> str:
 
     Returns:
       File type string: inbox, projects, next-actions, waiting-for,
-      someday-maybe, context, or unknown
+      someday-maybe, reference, context, or unknown
     """
     # Get the file name
     file_name = path.name
@@ -98,6 +98,8 @@ def detect_file_type(path: Path) -> str:
         return "waiting-for"
     elif file_name == "someday-maybe.md":
         return "someday-maybe"
+    elif file_name == "reference.md":
+        return "reference"
 
     # Check if it's in contexts folder
     if "contexts" in path.parts and file_name.startswith("@"):
