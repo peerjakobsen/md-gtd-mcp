@@ -7,7 +7,7 @@ import threading
 import time
 from pathlib import Path
 
-from md_gtd_mcp.server import list_gtd_files_impl, read_gtd_file_impl
+from md_gtd_mcp.services.resource_handler import ResourceHandler
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault
 
 
@@ -34,7 +34,9 @@ class TestErrorRecoveryScenarios:
 
                 try:
                     # Attempt to read the restricted file
-                    result = read_gtd_file_impl(str(vault_path), "gtd/restricted.md")
+                    result = ResourceHandler().get_file(
+                        str(vault_path), "gtd/restricted.md"
+                    )
 
                     # Should return error status with helpful message
                     assert result["status"] == "error"
@@ -67,7 +69,9 @@ class TestErrorRecoveryScenarios:
             )
             malformed_yaml_file.write_text(malformed_yaml_content)
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/malformed_yaml.md")
+            result = ResourceHandler().get_file(
+                str(vault_path), "gtd/malformed_yaml.md"
+            )
 
             # Should still succeed with graceful degradation
             assert result["status"] == "success"
@@ -87,7 +91,7 @@ class TestErrorRecoveryScenarios:
                 invalid_chars_content, encoding="utf-8", errors="ignore"
             )
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/invalid_chars.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/invalid_chars.md")
 
             # Should handle gracefully - main goal is no crash
             assert result["status"] == "success"
@@ -99,7 +103,7 @@ class TestErrorRecoveryScenarios:
         # Test with completely non-existent path
         non_existent_path = "/definitely/does/not/exist/vault"
 
-        result = read_gtd_file_impl(non_existent_path, "gtd/inbox.md")
+        result = ResourceHandler().get_file(non_existent_path, "gtd/inbox.md")
         assert result["status"] == "error"
         assert (
             "not found" in result["error"].lower()
@@ -108,11 +112,14 @@ class TestErrorRecoveryScenarios:
         assert result["vault_path"] == non_existent_path
 
         # Test list operation with non-existent vault
-        list_result = list_gtd_files_impl(non_existent_path)
-        # List gracefully handles non-existent vaults with suggestions
-        assert list_result["status"] == "success"
-        assert len(list_result["files"]) == 0  # Should be empty
-        assert "suggestion" in list_result  # Should provide helpful suggestion
+        list_result = ResourceHandler().get_files(non_existent_path)
+        # Should return error for non-existent vault directories
+        assert list_result["status"] == "error"
+        assert (
+            "vault directory" in list_result["error"].lower()
+            or "not found" in list_result["error"].lower()
+        )
+        assert list_result["vault_path"] == non_existent_path
 
     def test_corrupted_file_content_error_handling(self) -> None:
         """Test handling of various corrupted file scenarios."""
@@ -130,7 +137,7 @@ class TestErrorRecoveryScenarios:
             )  # PNG header
             binary_file.write_bytes(binary_content)
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/binary.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/binary.md")
             # Should handle gracefully - either succeed with minimal content or error
             # gracefully
             assert "status" in result
@@ -144,7 +151,7 @@ class TestErrorRecoveryScenarios:
             )  # Smaller for testing
             large_file.write_text(large_content)
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/large.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/large.md")
             # Should succeed - main goal is no memory crash
             assert result["status"] == "success"
             # File content should be processed
@@ -163,7 +170,7 @@ class TestErrorRecoveryScenarios:
             assert setup_result["status"] == "success"
 
             # Test 1: Empty file path
-            result = read_gtd_file_impl(str(vault_path), "")
+            result = ResourceHandler().get_file(str(vault_path), "")
             assert result["status"] == "error"
             assert (
                 "empty" in result["error"].lower()
@@ -171,14 +178,14 @@ class TestErrorRecoveryScenarios:
             )
 
             # Test 2: File path with null bytes (should be handled gracefully)
-            result = read_gtd_file_impl(str(vault_path), "gtd/test\x00file.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/test\x00file.md")
             assert result["status"] == "error"
 
             # Test 3: File outside GTD structure
             non_gtd_file = vault_path / "outside_gtd.md"
             non_gtd_file.write_text("# Outside GTD\n\n- [ ] Task")
 
-            result = read_gtd_file_impl(str(vault_path), "outside_gtd.md")
+            result = ResourceHandler().get_file(str(vault_path), "outside_gtd.md")
             assert result["status"] == "error"
             assert (
                 "gtd folder" in result["error"].lower()
@@ -186,7 +193,7 @@ class TestErrorRecoveryScenarios:
             )
 
             # Test 4: Directory instead of file
-            result = read_gtd_file_impl(str(vault_path), "gtd/contexts")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/contexts")
             assert result["status"] == "error"
 
     def test_comprehensive_error_message_quality(self) -> None:
@@ -206,7 +213,7 @@ class TestErrorRecoveryScenarios:
             vault_path = Path(temp_dir)
             setup_gtd_vault(str(vault_path))
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/nonexistent.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/nonexistent.md")
             assert result["status"] == "error"
             error_msg = result["error"]
             assert "nonexistent.md" in error_msg or "not found" in error_msg.lower()
@@ -220,7 +227,7 @@ class TestErrorRecoveryScenarios:
         ]
 
         for vault_path_test, file_path_test in test_scenarios:
-            result = read_gtd_file_impl(vault_path_test, file_path_test)
+            result = ResourceHandler().get_file(vault_path_test, file_path_test)
             assert result["status"] == "error"
             assert "error" in result
             assert len(result["error"]) > 5  # Should be meaningful
@@ -296,7 +303,7 @@ Final separator with task below:
 """
             edge_cases_file.write_text(edge_cases_content)
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/edge_cases.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/edge_cases.md")
 
             # Should succeed despite edge cases
             assert result["status"] == "success"
@@ -350,7 +357,9 @@ Final separator with task below:
             # Try to read file multiple times while it's being modified
             read_results = []
             for _ in range(20):
-                result = read_gtd_file_impl(str(vault_path), "gtd/concurrent_test.md")
+                result = ResourceHandler().get_file(
+                    str(vault_path), "gtd/concurrent_test.md"
+                )
                 read_results.append(result)
                 time.sleep(0.005)  # Small delay between reads
 
@@ -410,7 +419,7 @@ Visit [[Project émojis 🚀]] for more details
 """
             unicode_file.write_text(unicode_content, encoding="utf-8")
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/unicode_test.md")
+            result = ResourceHandler().get_file(str(vault_path), "gtd/unicode_test.md")
 
             # Should handle Unicode gracefully
             assert result["status"] == "success"
@@ -466,9 +475,9 @@ Visit [External Link {file_index}](https://example.com/file{file_index})
                 large_file.write_text(content)
 
             # Test reading all files (should handle 1000+ tasks total)
-            from md_gtd_mcp.server import read_gtd_files_impl
+            # Test reading all files using ResourceHandler
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = ResourceHandler().get_content(str(vault_path))
             assert result["status"] == "success"
 
             # Should handle large number of files and tasks

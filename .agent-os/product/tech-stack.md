@@ -39,6 +39,23 @@ Technical architecture for the MD-GTD-MCP server, based on global Agent OS stand
 - **Tool Transformation**: Tool.from_tool() patterns for context-specific tool adaptations (meeting notes vs email processing)
 - **Server Instructions**: Comprehensive FastMCP server instructions explaining GTD methodology and workflow integration
 
+## MCP Architecture Patterns
+- **Hybrid Approach**: Uses both resources for read-only operations and tools for write operations following MCP protocol semantics (Decision D007, D010)
+- **Resource Implementation**: 5 implemented resource templates for all read-only GTD data access:
+  - `gtd://{vault_path}/files` - File listings with metadata
+  - `gtd://{vault_path}/files/{file_type}` - Filtered file listings by GTD type
+  - `gtd://{vault_path}/file/{file_path}` - Single file content with parsing
+  - `gtd://{vault_path}/content` - Batch content access from multiple files
+  - `gtd://{vault_path}/content/{file_type}` - Filtered batch content by type
+- **Tool Implementation**: Write operations maintain tool pattern for semantic correctness:
+  - `setup_gtd_vault` - Creates GTD folder structure and files (state modification)
+  - Future tools: `process_inbox`, `create_project`, `update_task` (all modify state)
+- **Decision Criteria**: Clear guidelines for choosing tools vs resources:
+  - **Resources**: Simple, cacheable, read-only operations with URI-based access
+  - **Tools**: Write operations, complex queries, multi-step processing, parameter-rich operations
+- **Benefits**: Semantic clarity, optimal caching, better LLM understanding, REST-like patterns
+- **Resource Annotations**: All resources include `readOnlyHint: true` and `idempotentHint: true` for optimal client behavior
+
 ## MCP Prompts Architecture
 - **Design Philosophy**: Leverage Claude Desktop's LLM intelligence rather than requiring server-side API access (Decision D008)
 - **Workflow Orchestration**: MCP prompts guide Claude through GTD methodology without server complexity

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from md_gtd_mcp.models.vault_config import VaultConfig
+from md_gtd_mcp.services.resource_handler import ResourceHandler
 from md_gtd_mcp.services.vault_reader import VaultReader
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault
 from tests.fixtures import create_sample_vault
@@ -228,13 +229,17 @@ class TestContextBasedTaskFilteringWorkflow:
     Context-based task filtering for focused work sessions.
     """
 
-    def test_context_file_type_filtering_with_list_gtd_files(self) -> None:
-        """Test using list_gtd_files with file_type='context' for context overview."""
-        with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import list_gtd_files_impl as list_gtd_files
+    def test_context_file_type_filtering_with_resource_handler(self) -> None:
+        """Test using ResourceHandler get_files with file_type='context'.
 
-            # Use list_gtd_files to get lightweight context file overview
-            result = list_gtd_files(str(vault_config.vault_path), file_type="context")
+        For context overview."""
+        with create_sample_vault() as vault_config:
+            resource_handler = ResourceHandler()
+
+            # Use get_files to get lightweight context file overview
+            result = resource_handler.get_files(
+                str(vault_config.vault_path), file_type="context"
+            )
 
             assert result["status"] == "success"
             files = result["files"]
@@ -274,10 +279,10 @@ class TestContextBasedTaskFilteringWorkflow:
     def test_read_specific_context_files_for_focused_work(self) -> None:
         """Test reading specific context files (@calls, @computer) for focused work."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_file_impl as read_gtd_file
+            resource_handler = ResourceHandler()
 
             # Read @calls context file
-            calls_result = read_gtd_file(
+            calls_result = resource_handler.get_file(
                 str(vault_config.vault_path), "gtd/contexts/@calls.md"
             )
             assert calls_result["status"] == "success"
@@ -286,7 +291,7 @@ class TestContextBasedTaskFilteringWorkflow:
             assert "📞 Calls Context" in calls_file["content"]
 
             # Read @computer context file
-            computer_result = read_gtd_file(
+            computer_result = resource_handler.get_file(
                 str(vault_config.vault_path), "gtd/contexts/@computer.md"
             )
             assert computer_result["status"] == "success"
@@ -304,10 +309,10 @@ class TestContextBasedTaskFilteringWorkflow:
     def test_task_grouping_by_context_across_all_files(self) -> None:
         """Test proper task grouping by context across all GTD files."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+            resource_handler = ResourceHandler()
 
             # Read all GTD files to get complete task picture
-            result = read_gtd_files(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             files = result["files"]
@@ -430,11 +435,11 @@ class TestContextBasedTaskFilteringWorkflow:
     def test_context_based_filtering_for_focus_sessions(self) -> None:
         """Test complete workflow for context-based task filtering in focused work."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+            resource_handler = ResourceHandler()
 
             # Scenario: User wants to do focused @computer work session
             # Step 1: Get all tasks from all files
-            result = read_gtd_files(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             # Step 2: Extract and filter all @computer tasks
@@ -499,9 +504,9 @@ class TestContextBasedTaskFilteringWorkflow:
     def test_multi_context_task_analysis_for_session_planning(self) -> None:
         """Test analysis of tasks across multiple contexts for daily/weekly planning."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             # Collect all tasks and analyze by context for session planning
@@ -545,10 +550,10 @@ class TestContextBasedTaskFilteringWorkflow:
     def test_context_file_cross_reference_validation(self) -> None:
         """Test that context files properly reference tasks from other GTD files."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl as read_gtd_files
+            resource_handler = ResourceHandler()
 
             # Read all files to get complete picture
-            result = read_gtd_files(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             files = result["files"]
@@ -1109,9 +1114,9 @@ Review budget spreadsheet for Q4 planning
             inbox_path.write_text(daily_inbox_content)
 
             # Step 2: Read inbox using MCP tool
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+            result = resource_handler.get_file(str(vault_path), "gtd/inbox.md")
 
             # Verify successful read
             assert result["status"] == "success"
@@ -1250,9 +1255,9 @@ Look into that new productivity app
             inbox_path.write_text(categorization_inbox)
 
             # Read and analyze inbox
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+            result = resource_handler.get_file(str(vault_path), "gtd/inbox.md")
 
             assert result["status"] == "success"
             file_data = result["file"]
@@ -1334,9 +1339,9 @@ Quarterly goal assessment
             inbox_path.write_text(stats_inbox)
 
             # Read inbox and analyze statistics
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+            result = resource_handler.get_file(str(vault_path), "gtd/inbox.md")
 
             assert result["status"] == "success"
             file_data = result["file"]
@@ -1364,7 +1369,7 @@ Quarterly goal assessment
             )
             assert processing_ratio < 1.0  # Indicates backlog exists
 
-    def test_batch_inbox_processing_with_read_gtd_files(self) -> None:
+    def test_batch_inbox_processing_with_get_content(self) -> None:
         """Test batch reading of GTD files for comprehensive inbox processing."""
         import tempfile
         from pathlib import Path
@@ -1420,9 +1425,9 @@ Customer feedback compilation from support team
             inbox_path.write_text(batch_inbox_content)
 
             # Test batch reading with read_gtd_files
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = resource_handler.get_content(str(vault_path))
 
             assert result["status"] == "success"
             assert "files" in result
@@ -1714,9 +1719,9 @@ Study cryptocurrency and blockchain applications
             computer_file.write_text(computer_file.read_text() + computer_addition)
 
             # Step 6: Read full vault content using read_gtd_files
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = resource_handler.get_content(str(vault_path))
 
             # Verify successful read
             assert result["status"] == "success"
@@ -1907,9 +1912,9 @@ Average Time Per Task: 35 minutes
             (gtd_path / "next-actions.md").write_text(stats_next_actions)
 
             # Read and analyze statistics
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = resource_handler.get_content(str(vault_path))
 
             assert result["status"] == "success"
 
@@ -2008,9 +2013,9 @@ status: active
             (gtd_path / "next-actions.md").write_text(energy_content)
 
             # Read and analyze energy distribution
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = resource_handler.get_content(str(vault_path))
 
             assert result["status"] == "success"
 
@@ -2148,9 +2153,9 @@ status: active
             (gtd_path / "next-actions.md").write_text(task_tracking)
 
             # Read and analyze project progress
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            result = read_gtd_files_impl(str(vault_path))
+            result = resource_handler.get_content(str(vault_path))
 
             assert result["status"] == "success"
 
@@ -2231,10 +2236,10 @@ class TestProjectTrackingWorkflow:
         - Validate project-task relationships are preserved
         """
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_file_impl, read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Step 1: Read projects file and extract project definitions
-            projects_result = read_gtd_file_impl(
+            projects_result = resource_handler.get_file(
                 str(vault_config.vault_path), "gtd/projects.md"
             )
 
@@ -2260,7 +2265,9 @@ class TestProjectTrackingWorkflow:
             assert any("home office setup" in name for name in project_names)
 
             # Step 2: Read all GTD files to find project references
-            all_files_result = read_gtd_files_impl(str(vault_config.vault_path))
+            all_files_result = resource_handler.get_content(
+                str(vault_config.vault_path)
+            )
             assert all_files_result["status"] == "success"
 
             all_files = all_files_result["files"]
@@ -2427,10 +2434,10 @@ class TestProjectTrackingWorkflow:
     def test_project_progress_through_task_completion(self) -> None:
         """Test tracking project progress through task completion states."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Read all files to analyze project progress
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             all_files = result["files"]
@@ -2486,10 +2493,12 @@ class TestProjectTrackingWorkflow:
     def test_project_area_and_review_tracking(self) -> None:
         """Test project area organization and review date tracking."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
             # Read projects file specifically
-            result = read_gtd_file_impl(str(vault_config.vault_path), "gtd/projects.md")
+            result = resource_handler.get_file(
+                str(vault_config.vault_path), "gtd/projects.md"
+            )
             assert result["status"] == "success"
 
             projects_file = result["file"]
@@ -2530,10 +2539,10 @@ class TestProjectTrackingWorkflow:
     def test_cross_file_link_integrity(self) -> None:
         """Test that wikilinks between GTD files maintain integrity."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Read all files to check link integrity
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             all_files = result["files"]
@@ -2604,10 +2613,10 @@ class TestCrossFileNavigationWorkflow:
         - Validate wikilink resolution to actual files/sections
         """
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Step 1: Read all GTD files to get comprehensive link data
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
             assert "files" in result
 
@@ -2932,10 +2941,10 @@ class TestCrossFileNavigationWorkflow:
         """Test that wikilinks with section references are properly parsed and
         validated."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Read all files
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             all_files = result["files"]
@@ -2986,10 +2995,10 @@ class TestCrossFileNavigationWorkflow:
     def test_context_link_distribution_analysis(self) -> None:
         """Test context link distribution and validate context file existence."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Read all files
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             all_files = result["files"]
@@ -3053,10 +3062,10 @@ class TestCrossFileNavigationWorkflow:
     def test_link_integrity_error_scenarios(self) -> None:
         """Test link integrity validation handles edge cases and errors gracefully."""
         with create_sample_vault() as vault_config:
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
             # Read all files
-            result = read_gtd_files_impl(str(vault_config.vault_path))
+            result = resource_handler.get_content(str(vault_config.vault_path))
             assert result["status"] == "success"
 
             all_files = result["files"]
@@ -3192,9 +3201,9 @@ total_projects: 2
             projects_path.write_text(initial_projects_content)
 
             # Step 3: Perform initial read of vault state
-            from md_gtd_mcp.server import read_gtd_files_impl
+            resource_handler = ResourceHandler()
 
-            initial_result = read_gtd_files_impl(str(vault_path))
+            initial_result = resource_handler.get_content(str(vault_path))
 
             assert initial_result["status"] == "success"
             assert "files" in initial_result
@@ -3310,7 +3319,7 @@ Review [[Team Training Program]] weekly.
             projects_path.write_text(modified_projects_content)
 
             # Step 5: Perform second read to detect changes
-            modified_result = read_gtd_files_impl(str(vault_path))
+            modified_result = resource_handler.get_content(str(vault_path))
 
             assert modified_result["status"] == "success"
             assert "files" in modified_result
@@ -3391,16 +3400,18 @@ Review [[Team Training Program]] weekly.
             assert modified_summary["total_links"] > initial_total_links
 
             # Step 8: Test individual file reading to verify changes
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            inbox_read_result = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")
+            inbox_read_result = resource_handler.get_file(
+                str(vault_path), "gtd/inbox.md"
+            )
             assert inbox_read_result["status"] == "success"
 
             inbox_file_data = inbox_read_result["file"]
             assert len(inbox_file_data["tasks"]) == 6
             assert "Modified State" in inbox_file_data["content"]
 
-            projects_read_result = read_gtd_file_impl(
+            projects_read_result = resource_handler.get_file(
                 str(vault_path), "gtd/projects.md"
             )
             assert projects_read_result["status"] == "success"
@@ -3449,9 +3460,11 @@ last_reviewed: 2025-08-15
             next_actions_path.write_text(initial_content)
 
             # Initial read
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            initial_result = read_gtd_file_impl(str(vault_path), "gtd/next-actions.md")
+            initial_result = resource_handler.get_file(
+                str(vault_path), "gtd/next-actions.md"
+            )
 
             assert initial_result["status"] == "success"
             initial_tasks = initial_result["file"]["tasks"]
@@ -3486,7 +3499,9 @@ completed_today: 3
             next_actions_path.write_text(modified_content)
 
             # Second read - verify completion detection
-            modified_result = read_gtd_file_impl(str(vault_path), "gtd/next-actions.md")
+            modified_result = resource_handler.get_file(
+                str(vault_path), "gtd/next-actions.md"
+            )
 
             assert modified_result["status"] == "success"
             modified_tasks = modified_result["file"]["tasks"]
@@ -3547,9 +3562,11 @@ Reference: [Design Guidelines](https://example.com/design)
             projects_path.write_text(initial_content)
 
             # Initial read
-            from md_gtd_mcp.server import read_gtd_file_impl
+            resource_handler = ResourceHandler()
 
-            initial_result = read_gtd_file_impl(str(vault_path), "gtd/projects.md")
+            initial_result = resource_handler.get_file(
+                str(vault_path), "gtd/projects.md"
+            )
 
             assert initial_result["status"] == "success"
             initial_links = initial_result["file"]["links"]
@@ -3597,7 +3614,9 @@ Review [[contexts/@computer]] for web development tasks.
             projects_path.write_text(modified_content)
 
             # Second read - verify link changes
-            modified_result = read_gtd_file_impl(str(vault_path), "gtd/projects.md")
+            modified_result = resource_handler.get_file(
+                str(vault_path), "gtd/projects.md"
+            )
 
             assert modified_result["status"] == "success"
             modified_links = modified_result["file"]["links"]
