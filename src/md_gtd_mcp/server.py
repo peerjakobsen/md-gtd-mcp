@@ -24,6 +24,8 @@ for optimal caching and LLM understanding.
 ## Tool Architecture (Write Operations)
 
 - setup_gtd_vault - Create GTD folder structure safely (never overwrites existing files)
+- capture_inbox_item - Add items to inbox following GTD capture phase
+  (pure capture without metadata)
 
 ## Claude Desktop Integration
 
@@ -43,6 +45,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
+from md_gtd_mcp.services.inbox_capture import capture_inbox_item as capture_item_impl
 from md_gtd_mcp.services.resource_handler import ResourceHandler
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault as setup_vault_impl
 
@@ -163,6 +166,52 @@ def setup_gtd_vault(vault_path: str) -> dict[str, Any]:
         • gtd://vault_path/content - Complete system review
     """
     return setup_vault_impl(vault_path)
+
+
+@mcp.tool()
+def capture_inbox_item(vault_path: str, item_text: str) -> dict[str, Any]:
+    """Capture item to GTD inbox for frictionless thought collection.
+
+    This tool implements the GTD Capture phase by adding thoughts, ideas, and tasks
+    directly to your inbox without requiring immediate categorization, contexts, or
+    metadata decisions. Perfect for maintaining the flow of capture during meetings,
+    brainstorming, or when processing emails and other inputs.
+
+    PURE CAPTURE METHODOLOGY: Items are captured as simple checkbox tasks without
+    #task tags, contexts (@home, @calls), or projects. These metadata decisions
+    happen later during the Clarify phase, maintaining GTD's separation of concerns.
+
+    GTD Capture Phase Benefits:
+    • Zero friction - no categorization decisions during capture
+    • Preserves flow state during meetings or creative work
+    • Enables rapid thought collection without breaking concentration
+    • Separates capture from clarification for better processing
+
+    Args:
+        vault_path: Path to your Obsidian vault directory (absolute path recommended)
+        item_text: The thought, idea, or task to capture (will be cleaned and formatted)
+
+    Returns:
+        Dictionary with 'status' (success/error), 'item_text' (cleaned text),
+        'file_path' (location where item was captured), and error details if applicable.
+
+    Claude Desktop Usage Examples:
+        "Capture 'Review quarterly budget numbers' to my GTD inbox"
+        "Add 'Call dentist about appointment' to inbox"
+        "Capture meeting note: 'Follow up on project Alpha timeline'"
+        "Quick capture: 'Research new productivity apps'"
+
+    Processing Workflow:
+        1. Capture → Use this tool for rapid thought collection
+        2. Clarify → Process inbox items later with contexts and projects
+        3. Organize → Move clarified items to appropriate GTD files
+        4. Reflect → Weekly review using gtd://vault_path/content/inbox
+        5. Engage → Take action using context-based next action files
+
+    The captured item appears in GTD/inbox.md as a simple checkbox without metadata,
+    ready for later processing during your regular GTD clarification sessions.
+    """
+    return capture_item_impl(vault_path, item_text)
 
 
 # Initialize resource handler for MCP resource templates

@@ -25,22 +25,22 @@
 - [x] 2.4 Verify all MarkdownParser integration tests pass
 
 ### 3. Implement Inbox Capture Tool
-- [ ] 3.1 Write tests for capture_inbox_item MCP tool functionality
+- [x] 3.1 Write tests for capture_inbox_item MCP tool functionality
   - Test successful item capture to existing inbox.md
   - Test inbox.md creation when file doesn't exist
   - Test vault path validation and error handling
   - Test atomic file operations and concurrent access
   - Test various input formats and edge cases
-- [ ] 3.2 Create capture_inbox_item function with @mcp.tool() decorator in server.py
+- [x] 3.2 Create capture_inbox_item function with @mcp.tool() decorator in server.py
   - Accept vault_path and item_text as required parameters
   - Include GTD-focused tool description and usage examples
-- [ ] 3.3 Implement vault validation and inbox.md file handling
+- [x] 3.3 Implement vault validation and inbox.md file handling
   - Validate GTD structure exists or create if needed
   - Handle both existing and new inbox.md files safely
-- [ ] 3.4 Add atomic file writing operations for thread safety
+- [x] 3.4 Add atomic file writing operations for thread safety
   - Use temporary files and atomic moves for safe concurrent access
   - Handle file encoding and newline consistency
-- [ ] 3.5 Verify all capture_inbox_item tool tests pass
+- [x] 3.5 Verify all capture_inbox_item tool tests pass
 
 ### 4. Integration Testing and MCP Resource Compatibility
 - [ ] 4.1 Write integration tests for MCP resources with new task recognition
