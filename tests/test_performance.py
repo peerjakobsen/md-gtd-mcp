@@ -7,11 +7,7 @@ import tracemalloc
 from pathlib import Path
 
 from md_gtd_mcp.models.vault_config import VaultConfig
-from md_gtd_mcp.server import (
-    list_gtd_files_impl,
-    read_gtd_file_impl,
-    read_gtd_files_impl,
-)
+from md_gtd_mcp.services.resource_handler import ResourceHandler
 from md_gtd_mcp.services.vault_reader import VaultReader
 from md_gtd_mcp.services.vault_setup import setup_gtd_vault
 
@@ -344,7 +340,7 @@ class TestPerformanceWithRealisticGTDVault:
 
             # Test list_gtd_files performance
             list_start = time.time()
-            file_list = list_gtd_files_impl(str(vault_path), None)["files"]
+            file_list = ResourceHandler().get_files(str(vault_path), None)["files"]
             list_time = time.time() - list_start
 
             assert list_time < 2.0, (
@@ -355,7 +351,9 @@ class TestPerformanceWithRealisticGTDVault:
 
             # Test read_gtd_file performance (single file)
             single_read_start = time.time()
-            inbox_content = read_gtd_file_impl(str(vault_path), "gtd/inbox.md")["file"]
+            inbox_content = ResourceHandler().get_file(str(vault_path), "gtd/inbox.md")[
+                "file"
+            ]
             single_read_time = time.time() - single_read_start
 
             assert single_read_time < 0.5, (
@@ -368,7 +366,7 @@ class TestPerformanceWithRealisticGTDVault:
 
             # Test read_gtd_files performance (all files)
             batch_read_start = time.time()
-            all_content = read_gtd_files_impl(str(vault_path), None)
+            all_content = ResourceHandler().get_content(str(vault_path), None)
             batch_read_time = time.time() - batch_read_start
 
             total_tasks = sum(
@@ -440,9 +438,9 @@ class TestPerformanceWithRealisticGTDVault:
 
             # Test context filtering performance
             filter_start = time.time()
-            context_files = list_gtd_files_impl(str(vault_path), file_type="context")[
-                "files"
-            ]
+            context_files = ResourceHandler().get_files(
+                str(vault_path), file_type="context"
+            )["files"]
             filter_time = time.time() - filter_start
 
             assert filter_time < 1.0, (
@@ -453,7 +451,9 @@ class TestPerformanceWithRealisticGTDVault:
 
             # Test reading specific context files
             context_read_start = time.time()
-            read_gtd_file_impl(str(vault_path), "gtd/contexts/@computer.md")["file"]
+            ResourceHandler().get_file(str(vault_path), "gtd/contexts/@computer.md")[
+                "file"
+            ]
             context_read_time = time.time() - context_read_start
 
             assert context_read_time < 0.2, (

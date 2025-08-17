@@ -249,7 +249,7 @@ class TestResourceHandlerDataConsistency:
 
     @patch("md_gtd_mcp.services.resource_handler.VaultReader")
     def test_get_files_data_consistency(self, mock_vault_reader_class: Mock) -> None:
-        """Test that get_files returns same format as list_gtd_files_impl."""
+        """Test that get_files returns expected resource format."""
         # Mock VaultReader to return predictable data
         mock_vault_reader = Mock()
         mock_vault_reader_class.return_value = mock_vault_reader
@@ -282,7 +282,7 @@ class TestResourceHandlerDataConsistency:
 
         result = self.resource_handler.get_files(str(self.vault_path))
 
-        # Verify response structure matches list_gtd_files_impl
+        # Verify response structure matches expected resource format
         assert "status" in result
         assert "files" in result
         assert "summary" in result
@@ -307,7 +307,7 @@ class TestResourceHandlerDataConsistency:
 
     @patch("md_gtd_mcp.services.resource_handler.VaultReader")
     def test_get_file_data_consistency(self, mock_vault_reader_class: Mock) -> None:
-        """Test that get_file returns same format as read_gtd_file_impl."""
+        """Test that get_file returns expected resource format."""
         # Mock VaultReader and GTD file
         mock_vault_reader = Mock()
         mock_vault_reader_class.return_value = mock_vault_reader
@@ -352,7 +352,7 @@ class TestResourceHandlerDataConsistency:
 
         result = self.resource_handler.get_file(str(self.vault_path), "GTD/inbox.md")
 
-        # Verify response structure matches read_gtd_file_impl
+        # Verify response structure matches expected resource format
         assert "status" in result
         assert "file" in result
         assert "vault_path" in result

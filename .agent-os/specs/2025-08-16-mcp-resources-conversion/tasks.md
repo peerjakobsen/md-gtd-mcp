@@ -35,14 +35,14 @@
   - Verify integration test suite passes with resource-based approach
   - Maintain test coverage for all GTD workflow scenarios
   - Ensure backwards compatibility verification during transition
-- [ ] 1.7 Write comprehensive tests for tool removal and cleanup verification
+- [x] 1.7 Write comprehensive tests for tool removal and cleanup verification
   - Test that removed tools (`read_gtd_file`, `list_gtd_files`, `read_gtd_files`) are no longer accessible via MCP protocol
   - Test that implementation functions are either removed or properly refactored for resource use
   - Test that all functionality is preserved through resources with identical data formats
   - Test server instructions reflect resource-based access patterns
   - Verify no orphaned imports remain in the codebase after cleanup
   - Test error scenarios for removed tools return appropriate "tool not found" responses
-- [ ] 1.8 Remove tool implementations and perform comprehensive server cleanup
+- [x] 1.8 Remove tool implementations and perform comprehensive server cleanup
   **Server.py cleanup:**
   - Remove `@mcp.tool()` decorators for `list_gtd_files`, `read_gtd_file`, and `read_gtd_files` (lines 278, 292, 472)
   - Evaluate whether to keep *_impl functions for resource handlers or refactor into ResourceHandler service
@@ -60,7 +60,7 @@
   - Update server instructions to describe resource access patterns for Claude Desktop
   - Remove tool descriptions from docstrings and replace with resource URI examples
   - Update CLAUDE.md to reflect resource-based approach
-- [ ] 1.9 Verify complete migration and test suite stability
+- [x] 1.9 Verify complete migration and test suite stability
   - Run full test suite with pytest to ensure all tests pass after cleanup
   - Use grep/search to verify no remaining references to removed tools exist in codebase
   - Check that VaultReader service methods remain functional and unchanged
