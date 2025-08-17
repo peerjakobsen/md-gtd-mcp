@@ -3,9 +3,9 @@
 ## Task Breakdown
 
 ### 1. Set up prompt infrastructure and schemas
-- [ ] 1.1 Write tests for InboxItem, Categorization, and ItemGroup Pydantic models
-- [ ] 1.2 Implement base prompt schemas in prompts/schemas.py
-- [ ] 1.3 Create prompt package structure with __init__.py
+- [x] 1.1 Write tests for InboxItem, Categorization, and ItemGroup Pydantic models
+- [x] 1.2 Implement base prompt schemas in prompts/schemas.py
+- [x] 1.3 Create prompt package structure with __init__.py
 - [ ] 1.4 Write tests for prompt registration system
 - [ ] 1.5 Implement prompt discovery and registration mechanism
 - [ ] 1.6 Add FastMCP prompt decorator imports

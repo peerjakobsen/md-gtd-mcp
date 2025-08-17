@@ -28,7 +28,7 @@ class TaskExtractor:
     """
 
     # Regex patterns for parsing task components
-    TASK_LINE_PATTERN = re.compile(r"^(\s*)- \[(.)\] (.+)$", re.MULTILINE)
+    TASK_LINE_PATTERN = re.compile(r"^(\s*)- \[(.)\]\s*(.*)$", re.MULTILINE)
 
     # GTD metadata patterns
     CONTEXT_PATTERN = re.compile(r"@(\w+)")
@@ -39,6 +39,12 @@ class TaskExtractor:
 
     # Obsidian Tasks plugin metadata patterns
     TAG_PATTERN = re.compile(r"#([\w-]+)")
+
+    # More precise patterns for cleaning (avoid removing legitimate content)
+    CONTEXT_CLEAN_PATTERN = re.compile(r"\s@(\w+)(?=\s|$)")  # Only standalone @contexts
+    TAG_CLEAN_PATTERN = re.compile(
+        r"\s#([a-zA-Z][\w-]*)(?=\s|$)"
+    )  # Only #tags starting with letter
     DUE_DATE_PATTERN = re.compile(r"📅(\d{4}-\d{2}-\d{2})")
     SCHEDULED_DATE_PATTERN = re.compile(r"⏳(\d{4}-\d{2}-\d{2})")
     START_DATE_PATTERN = re.compile(r"🛫(\d{4}-\d{2}-\d{2})")
@@ -120,6 +126,11 @@ class TaskExtractor:
 
         # Extract all metadata and clean text
         task_data = cls._extract_metadata(content)
+
+        # Filter out tasks with empty content after cleaning
+        if not task_data["text"].strip():
+            return None
+
         task_data.update(
             {
                 "is_completed": is_completed,
@@ -255,10 +266,10 @@ class TaskExtractor:
         # Remove all metadata patterns
         text = content
 
-        # Remove contexts
-        text = cls.CONTEXT_PATTERN.sub("", text)
+        # Remove contexts (only standalone @contexts, not email addresses)
+        text = cls.CONTEXT_CLEAN_PATTERN.sub("", text)
 
-        # Remove project links
+        # Remove project links (only [[wikilinks]], not [regular](links))
         text = cls.PROJECT_PATTERN.sub("", text)
 
         # Remove energy emojis
@@ -270,8 +281,8 @@ class TaskExtractor:
         # Remove delegated persons
         text = cls.DELEGATED_PATTERN.sub("", text)
 
-        # Remove tags
-        text = cls.TAG_PATTERN.sub("", text)
+        # Remove tags (only standalone #tags, not PR numbers etc.)
+        text = cls.TAG_CLEAN_PATTERN.sub("", text)
 
         # Remove date metadata
         text = cls.DUE_DATE_PATTERN.sub("", text)

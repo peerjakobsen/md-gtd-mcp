@@ -257,12 +257,88 @@ Random thoughts throughout the day:
             task for task in tasks if "spaces" in task.text or "tabs" in task.text
         ]
         assert (
-            len(whitespace_tasks) == 1
-        )  # Only one task has "spaces" or "tabs" that gets matched
+            len(whitespace_tasks) == 2
+        )  # Two tasks: one with "spaces" and one with "tabs"
 
-        # Check technical content (text may be truncated during parsing)
+        # Check technical content works properly
         assert "Fix bug in `getUserData()` function" in task_texts
-        assert any("Review PR" in text for text in task_texts)  # May be truncated
+        assert (
+            "Review PR #123 for authentication changes" in task_texts
+        )  # PR numbers preserved
+
+        # Check email addresses are preserved
+        assert "Email person@company.com about proposal" in task_texts
+
+    def test_regression_email_and_pr_preservation(self) -> None:
+        """Regression test for email addresses and PR numbers being preserved."""
+        text = """
+- [ ] Email support@company.com about the issue
+- [ ] Review PR #456 for bugfix
+- [ ] Contact person@example.org for feedback
+- [ ] Check issue #789 in GitHub
+"""
+
+        tasks = TaskExtractor.extract_tasks(text, file_type="inbox")
+        task_texts = [task.text for task in tasks]
+
+        # Email addresses should be preserved
+        assert "Email support@company.com about the issue" in task_texts
+        assert "Contact person@example.org for feedback" in task_texts
+
+        # PR and issue numbers should be preserved
+        assert "Review PR #456 for bugfix" in task_texts
+        assert "Check issue #789 in GitHub" in task_texts
+
+    def test_regression_tab_whitespace_handling(self) -> None:
+        """Regression test for tasks with tab characters."""
+        text = "- [ ]\tTask with tab after checkbox\n- [ ] Normal task with spaces"
+
+        tasks = TaskExtractor.extract_tasks(text, file_type="inbox")
+        assert len(tasks) == 2
+
+        task_texts = [task.text for task in tasks]
+        assert "Task with tab after checkbox" in task_texts
+        assert "Normal task with spaces" in task_texts
+
+    def test_regression_empty_task_filtering(self) -> None:
+        """Regression test for empty tasks being properly filtered."""
+        text = """
+- [ ]
+- [ ] Valid task
+- [ ]
+- [ ] Another valid task
+"""
+
+        tasks = TaskExtractor.extract_tasks(text, file_type="inbox")
+        assert len(tasks) == 2
+
+        task_texts = [task.text for task in tasks]
+        assert "Valid task" in task_texts
+        assert "Another valid task" in task_texts
+
+    def test_regression_standalone_metadata_removal(self) -> None:
+        """Regression test for precise metadata removal."""
+        text = """
+- [ ] Task with @home context
+- [ ] Email admin@company.com about proposal
+- [ ] Review with #urgent tag
+- [ ] Check PR #123 for changes
+"""
+
+        tasks = TaskExtractor.extract_tasks(text, file_type="inbox")
+        task_texts = [task.text for task in tasks]
+
+        # Standalone contexts should be removed
+        assert "Task with context" in task_texts
+
+        # Email addresses should be preserved (not treated as context)
+        assert "Email admin@company.com about proposal" in task_texts
+
+        # Standalone tags should be removed
+        assert "Review with tag" in task_texts
+
+        # PR numbers should be preserved (not treated as tags)
+        assert "Check PR #123 for changes" in task_texts
 
 
 class TestNonInboxFileEdgeCases:
