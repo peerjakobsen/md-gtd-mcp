@@ -43,20 +43,20 @@
 - [x] 3.5 Verify all capture_inbox_item tool tests pass
 
 ### 4. Integration Testing and MCP Resource Compatibility
-- [ ] 4.1 Write integration tests for MCP resources with new task recognition
+- [x] 4.1 Write integration tests for MCP resources with new task recognition
   - Test ResourceHandler.get_file() with inbox files shows enhanced task parsing
   - Test ResourceHandler.get_content() maintains format compatibility
   - Test existing MCP resource URIs continue working unchanged
   - Test resource caching works correctly with new task recognition logic
-- [ ] 4.2 Test that ResourceHandler methods work correctly with enhanced TaskExtractor
+- [x] 4.2 Test that ResourceHandler methods work correctly with enhanced TaskExtractor
   - Verify gtd://{vault_path}/file/gtd/inbox.md shows tasks without #task tags
   - Verify gtd://{vault_path}/file/gtd/projects.md maintains #task requirements
   - Test batch content operations maintain correct behavior per file type
-- [ ] 4.3 Run comprehensive regression testing
+- [x] 4.3 Run comprehensive regression testing
   - Execute full existing test suite to ensure no breaking changes
   - Test all existing MCP tools maintain exact same behavior
   - Verify server startup and resource registration unchanged
-- [ ] 4.4 Verify all integration and regression tests pass
+- [x] 4.4 Verify all integration and regression tests pass
 
 ### 5. Update Test Fixtures and Documentation
 - [ ] 5.1 Write comprehensive edge case tests for both recognition modes
