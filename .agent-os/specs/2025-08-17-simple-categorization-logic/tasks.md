@@ -93,7 +93,7 @@
     - Performance benchmarks: spacy (linguistic) vs rapidfuzz (fuzzy) vs textstat (complexity)
     - Memory usage guidelines for en_core_web_sm model vs keyword-only approaches
     - Offline operation confirmation (no external API dependencies)
-- [ ] 2.8 Verify all static rule engine tests pass
+- [x] 2.8 Verify all static rule engine tests pass
   - Integration tests with prompt generation
     - Test spacy pattern extraction feeds correctly into MCP prompt context
     - Validate rapidfuzz results integrate with prompt hints for Claude
