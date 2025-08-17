@@ -59,23 +59,23 @@
 - [x] 4.4 Verify all integration and regression tests pass
 
 ### 5. Update Test Fixtures and Documentation
-- [ ] 5.1 Write comprehensive edge case tests for both recognition modes
+- [x] 5.1 Write comprehensive edge case tests for both recognition modes
   - Test complex inbox scenarios: mixed processed/unprocessed items
   - Test non-inbox files with various #task tag patterns
   - Test file type detection edge cases and unknown file types
-- [ ] 5.2 Update test fixtures to reflect new inbox behavior
+- [x] 5.2 Update test fixtures to reflect new inbox behavior
   - Remove #task tags from tests/fixtures/sample_vault/gtd/inbox.md
   - Add realistic inbox content: meeting notes, quick captures, thoughts
   - Maintain existing #task patterns in projects.md and other GTD files
-- [ ] 5.3 Update relevant docstrings and type hints
+- [x] 5.3 Update relevant docstrings and type hints
   - Document new file_type parameter in TaskExtractor methods
   - Add GTD methodology context to tool descriptions
   - Include usage examples for capture_inbox_item tool
-- [ ] 5.4 Test complete GTD workflow scenarios
+- [x] 5.4 Test complete GTD workflow scenarios
   - Test full capture → clarify → organize workflow
   - Verify inbox processing maintains GTD phase separation
   - Test integration with weekly review and planning workflows
-- [ ] 5.5 Verify all updated tests and documentation are complete
+- [x] 5.5 Verify all updated tests and documentation are complete
 
 ## Task Dependencies
 

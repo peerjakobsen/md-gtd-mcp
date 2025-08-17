@@ -75,14 +75,32 @@ class GTDFile:
 
 
 def detect_file_type(path: Path) -> str:
-    """Detect GTD file type based on path.
+    """Detect GTD file type from path for phase-aware task recognition.
+
+    Maps file paths to GTD categories to enable proper task recognition behavior:
+
+    CAPTURE PHASE:
+    - "inbox": inbox.md files → All checkboxes recognized (frictionless capture)
+
+    CLARIFY+ PHASES:
+    - "projects": projects.md files → Requires #task tags (processed items)
+    - "next-actions": next-actions.md files → Requires #task tags
+    - "waiting-for": waiting-for.md files → Requires #task tags
+    - "someday-maybe": someday-maybe.md files → Requires #task tags
+    - "reference": reference.md files → Requires #task tags
+    - "context": @context.md files in contexts/ → Requires #task tags
 
     Args:
-      path: Path to the file
+        path: File path to analyze for GTD type classification
 
     Returns:
-      File type string: inbox, projects, next-actions, waiting-for,
-      someday-maybe, reference, context, or unknown
+        GTD file type string determining task recognition behavior:
+        "inbox", "projects", "next-actions", "waiting-for", "someday-maybe",
+        "reference", "context", or "unknown"
+
+    GTD Methodology:
+        This classification drives TaskExtractor behavior to maintain proper
+        phase separation: inbox = pure capture, others = processed actionables
     """
     # Get the file name
     file_name = path.name
