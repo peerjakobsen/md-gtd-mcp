@@ -429,3 +429,127 @@ This structure ensures SOPs are actionable workflow guides rather than passive d
 - Positive: Better LLM understanding through semantic correctness
 - Neutral: Requires training new contributors on decision criteria
 - Negative: May occasionally require implementing both patterns for edge cases
+
+### D011: GTD Project Files as Support Material (Not Task Containers)
+- **Status**: Decided
+- **Date**: 2025-08-17
+- **Category**: Methodology
+- **Stakeholders**: Development Team, Product Owner, End Users
+
+**Context**: Analysis of current implementation revealed that project files are being treated as task containers, which conflicts with David Allen's GTD methodology. In authentic GTD, project files serve as project support material (planning, reference, brainstorming) while actionable tasks belong in context-organized action lists.
+
+**Alternatives**:
+1. Continue current approach treating project files as task containers
+2. Implement pure GTD methodology with project files as support material only
+3. Hybrid approach supporting both patterns with user configuration
+4. Gradual migration from current approach to pure GTD methodology
+
+**Decision**: Implement pure GTD methodology where project files serve as project support material repositories, not task containers. Actions are extracted from project planning to appropriate context lists.
+
+**Rationale**:
+- **Authentic GTD Implementation**: Follows David Allen's original methodology correctly for better user adoption
+- **Cleaner Separation of Concerns**: Project files focus on outcomes, planning, and reference; action lists focus on execution
+- **Better User Experience**: Users see relevant information at the right time - planning material during planning, actions during execution
+- **Improved Weekly Reviews**: Clear project outcomes and organized support material make reviews more effective
+- **Reduced Cognitive Load**: Eliminates mixing of planning and execution concerns in same interface
+
+**Implementation Details**:
+
+**Project Files Contain**:
+- Project outcome statements and success criteria
+- Project purpose and vision
+- Meeting notes related to the project
+- Research, brainstorming, and reference materials
+- Contact information and resource details
+- Timeline, milestones, and dependency information
+- Links TO related actions in context lists (without duplication)
+
+**Project Files Do NOT Contain**:
+- Actionable next steps (these go to next-actions.md with inline context tags)
+- Waiting-for items (these go to waiting-for.md)
+- Someday/maybe tasks (these go to someday-maybe.md)
+
+**Architecture Changes**:
+- Project files serve as planning and reference repositories
+- Action extraction tools move tasks FROM project files TO appropriate GTD category files (next-actions.md, waiting-for.md, someday-maybe.md)
+- Project-action linking maintains relationships without duplication using inline tags and queries
+- Weekly review processes focus on project outcomes and support material organization
+- MCP prompts guide proper separation during project planning sessions
+- Context files contain Obsidian Tasks queries only - never duplicate tasks
+
+**Consequences**:
+- Positive: Authentic GTD methodology implementation improves user workflow effectiveness
+- Positive: Cleaner information architecture with appropriate separation of concerns
+- Positive: Better weekly review experience with focused project outcome evaluation
+- Positive: Reduced cognitive overhead during both planning and execution modes
+- Positive: Natural fit with existing GTD practitioner mental models and expectations
+- Neutral: Requires updating current project file templates and documentation
+- Neutral: May require user education about proper GTD project file usage
+- Negative: Breaking change from current implementation treating projects as task containers
+- Negative: Additional complexity in maintaining project-action relationships across files
+
+### D012: Non-Duplication Task Architecture with Tag-Based Filtering
+- **Status**: Decided
+- **Date**: 2025-08-17
+- **Category**: Architecture
+- **Stakeholders**: Development Team, End Users
+
+**Context**: Need to prevent task duplication across files while maintaining GTD methodology and enabling flexible context-based views. Users require tasks to exist in exactly one location to avoid synchronization issues while still supporting multi-dimensional filtering by context, project, and other metadata.
+
+**Alternatives**:
+1. Allow task duplication across multiple files with manual synchronization
+2. Store all tasks in single file with complex filtering
+3. Implement single source of truth with tag-based filtering using Obsidian Tasks queries
+4. Create complex database-like system for task management
+
+**Decision**: Implement single source of truth task architecture where each task exists in exactly ONE GTD category file, with context files serving as query views using Obsidian Tasks plugin filtering.
+
+**Rationale**:
+- **Data Integrity**: Eliminates synchronization issues and conflicting task states
+- **GTD Methodology Compliance**: Tasks organized by status (next-action, waiting, someday) as per David Allen's system
+- **Flexible Filtering**: Multi-dimensional views through inline tagging without data duplication
+- **Obsidian Native**: Leverages existing Obsidian Tasks plugin capabilities for advanced filtering
+- **Maintenance Simplicity**: Update task once, reflected everywhere through queries
+
+**Implementation Details**:
+
+**Task Storage Pattern**:
+- `next-actions.md` - Active, actionable tasks ready for execution
+- `waiting-for.md` - Tasks delegated to others or waiting on external factors
+- `someday-maybe.md` - Future possibilities not yet committed to action
+- `projects.md` - Support material ONLY, no tasks (per Decision D011)
+
+**Inline Tagging Convention**:
+```markdown
+- [ ] Call insurance company @phone #admin
+- [ ] Review project proposal @computer #work/client-xyz
+- [ ] Buy groceries @errands #personal
+```
+
+**Context Files as Query Views**:
+Context files (e.g., `@computer.md`, `@phone.md`) contain Obsidian Tasks queries ONLY:
+```markdown
+```tasks
+not done
+tags include @computer
+sort by due
+```
+```
+
+**Query Patterns**:
+- Simple context: `tags include @computer`
+- Project + context: `tags include @computer AND tags include #project/website`
+- Exclude categories: `tags do not include @waiting-for`
+- Due dates: `tags include @errands AND due before tomorrow`
+
+**Consequences**:
+- Positive: Eliminates data duplication and synchronization issues
+- Positive: Maintains authentic GTD methodology with status-based organization
+- Positive: Enables flexible multi-dimensional filtering through queries
+- Positive: Leverages native Obsidian Tasks plugin capabilities
+- Positive: Simple maintenance - update once, seen everywhere
+- Positive: Clear separation between data storage (GTD files) and views (context files)
+- Neutral: Requires understanding of Obsidian Tasks query syntax
+- Neutral: Users must tag tasks consistently for effective filtering
+- Negative: Context files cannot contain additional task-specific notes (they're pure queries)
+- Negative: Dependency on Obsidian Tasks plugin for optimal experience

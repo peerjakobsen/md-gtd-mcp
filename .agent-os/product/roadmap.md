@@ -23,6 +23,7 @@
 - [ ] MCP Prompts for GTD Workflows (M) - **HIGH PRIORITY** (Decision D008). Pre-configured prompt templates using @mcp.prompt decorator to orchestrate GTD workflows through Claude Desktop's LLM intelligence without requiring server-side API access: inbox_clarification, weekly_review, project_decomposition, daily_planning, stall_detection, context_switching. Prompts guide Claude through proper GTD methodology and eliminate API key barriers for users
 - [x] Configuration System (S) - JSON config for vault paths and basic preferences. VaultConfig class implemented
 - [x] Vault Setup Tool (S) - setup_gtd_vault creates complete GTD folder structure safely without overwriting existing files
+- [x] Query-Based Context Views (S) - **IMPLEMENTED**. Context files (@computer.md, @home.md) created with Obsidian Tasks queries only, implementing non-duplication architecture where tasks exist in GTD category files and are filtered by inline tags
 - [x] Read GTD File Tool (S) - read_gtd_file for parsing single GTD files with frontmatter and tasks
 - [x] List GTD Files Tool (S) - list_gtd_files for vault overview with metadata and filtering
 - [x] Read GTD Files Tool (M) - read_gtd_files for batch reading with comprehensive content extraction
@@ -30,25 +31,27 @@
 - [x] Integration Testing Suite (L) - 10 end-to-end workflow scenarios tested (onboarding, migration, processing, review, etc.)
 - [x] Error Handling & Validation (M) - Robust error handling for file operations and invalid inputs. Comprehensive error recovery tested
 
-## Phase 2: Intelligent Processing & Project Management
-**Goal**: Add AI-powered insights for project decomposition and workflow automation
+## Phase 2: Intelligent Processing & Project Support Material Management
+**Goal**: Add AI-powered insights for project support material organization and intelligent action extraction to context lists
 
 **Success Criteria**:
-- Can break down projects into actionable next steps
-- Identifies stalled projects and suggests improvements
-- Processes multiple inbox items efficiently
+- Can organize project support material around clear outcomes and extract actionable next steps to context lists
+- Identifies projects with unclear outcomes or stalled support material activity
+- Maintains clean separation between project planning (support material) and execution (action lists)
+- Processes multiple inbox items efficiently with proper categorization
 
 **Features**:
 - [ ] Advanced Text Analysis (L) - MCP prompt-guided extraction of actions, contexts, and priorities from text using Claude Desktop's intelligence for context detection (@home, @office, @calls, @errands). Focus on Clarify phase analysis rather than Capture phase requirements
 - [ ] Intelligent Context Assignment (M) - Use MCP prompts to guide Claude Desktop in suggesting appropriate GTD contexts during Clarify phase based on task content analysis. Respects GTD methodology by NOT requiring contexts during initial capture
 - [ ] Process Inbox Tool (L) - MCP prompt-driven guidance for transition from Capture to Clarify phase. Use inbox_clarification prompt to help Claude Desktop analyze inbox items and suggest GTD categories, contexts, and priority assignments with explanations. Adds #task tag when processing items, transforming raw captures into actionable tasks with processing audit trail
-- [ ] Project Decomposition Engine (XL) - Use project_decomposition MCP prompt to guide Claude Desktop in breaking high-level projects into specific, actionable tasks following GTD methodology
+- [ ] Project Support Material Engine (XL) - Use project_planning MCP prompt to guide Claude Desktop in organizing project outcomes, support material, and extracting actionable next steps to appropriate context lists following GTD methodology
 - [ ] Stall Detection System (M) - Use stall_detection MCP prompt to guide Claude Desktop in identifying projects without recent activity or clear next actions
 - [ ] Batch Inbox Processing (L) - Handle multiple captured thoughts simultaneously with consistent logic
 - [ ] Context & Priority Recognition (L) - Identify GTD contexts (@calls, @errands) and priority indicators during appropriate GTD phases
 - [ ] Intelligent Tool Naming & Organization (S) - GTD-specific tool names (process_inbox, capture_item, review_projects) with proper categorization and tags for LLM understanding
 - [ ] Context-Aware Tool Transformation (M) - Dynamic tool adaptation using Tool.from_tool() patterns to create specialized versions based on user context (e.g., transform generic "process_item" into "process_meeting_notes" or "process_email_capture" with appropriate parameter defaults)
-- [ ] Template System (M) - Customizable templates for different project types and workflows
+- [ ] Project Support Template System (M) - Customizable templates for project outcome definition, support material organization, and action extraction patterns
+- [ ] Project-Action Linking System (M) - Maintain connections between project support material and related actions in GTD category files without duplication, enabling project status tracking through linked action completion
 - [ ] SOP System Foundation (M) - **NEW** (Decision D009). Establish SOPs folder structure (`GTD/SOPs/`) and simple project-SOP linking via metadata in single `projects.md` file. Enable organization-specific workflow customization through user-maintained standard operating procedures
 - [ ] SOP Template Creation Tool (S) - **NEW** (Decision D009). MCP tool to create starter SOP templates with standardized GTD-integrated structure (7 sections: GTD Clarification Questions, Project Decomposition, Context Rules, Review Checkpoints, Success Criteria, Common Patterns, Anti-patterns). Covers common procedures: 1:1 meetings, MEDDPICC sales, monthly reports, career development, code review, incident response. Users customize content directly in Obsidian
 - [ ] SOP-Enhanced Prompts (L) - **NEW** (Decision D009). Enhance existing MCP prompts (project_decomposition, weekly_review, etc.) to dynamically read and incorporate relevant SOPs when processing projects. Enables context-aware GTD workflows following organization-specific procedures

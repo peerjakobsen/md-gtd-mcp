@@ -46,7 +46,7 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 
 1. **Inbox Processing Bottleneck**: GTD practitioners spend 30-60 minutes daily categorizing captured thoughts, meeting notes, and ideas. This manual process is repetitive and prone to inconsistency, leading to delayed processing and decision fatigue.
 
-2. **Project Stagnation**: 40-60% of projects in GTD systems lack clear next actions, causing work to stall. Breaking down complex projects into actionable steps requires cognitive effort that busy professionals often defer.
+2. **Project Clarity and Support Material Chaos**: 40-60% of projects lack clear outcomes, purpose statements, and organized support material. Without proper project planning documentation, practitioners struggle to maintain focus on successful outcomes and next physical actions. Project support material (meeting notes, research, brainstorming) remains scattered across multiple locations instead of being organized around project outcomes.
 
 3. **Ineffective Weekly Reviews**: The critical GTD weekly review process is time-consuming and often skipped. Without regular reviews, systems become cluttered with outdated information and missed opportunities.
 
@@ -58,7 +58,11 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 
 2. **Universal Compatibility**: Support standard Obsidian markdown format (`- [ ]` tasks) as the primary interface, ensuring compatibility with existing tools like Claude Desktop and other AI assistants while maintaining optional enhanced functionality.
 
-3. **Workflow Preservation**: Enhance existing Obsidian GTD setups without forcing users to abandon their established systems, muscle memory, or preferred folder structures.
+3. **Project Support Material Separation & Non-Duplication**: Maintain David Allen's fundamental distinction between project support material (planning, research, reference information) and action lists. Project files serve as repositories for project outcomes, planning notes, and reference material - NOT as task containers. Actions are extracted to appropriate GTD category files (next-actions.md, waiting-for.md, someday-maybe.md) with inline context tags (@home, @computer, @calls). Context files serve as query views only - never storing duplicate tasks.
+
+4. **Single Source of Truth**: Each task exists in exactly ONE file based on its GTD category status. Tasks are never duplicated across files - instead, context files (@computer.md, @home.md) contain Obsidian Tasks queries that filter tasks by inline tags. This prevents synchronization issues and maintains data integrity while enabling flexible multi-dimensional views.
+
+5. **Workflow Preservation**: Enhance existing Obsidian GTD setups without forcing users to abandon their established systems, muscle memory, or preferred folder structures.
 
 ## Differentiators
 
@@ -79,12 +83,13 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 - **Context Assignment Guidance**: Suggest appropriate GTD contexts (@home, @computer, @calls, @errands) during clarification, not capture
 - **Batch Processing**: Process multiple inbox items simultaneously with consistent categorization logic during dedicated clarification sessions
 
-### Project Management
-- **Project Decomposition**: Break down high-level projects into specific, actionable next steps
-- **SOP-Enhanced Workflows**: Integrate organization-specific Standard Operating Procedures (SOPs) with project workflows for consistent execution of business processes like 1:1 meetings, sales methodologies (MEDDPICC), reporting cycles, and career development discussions
-- **Stall Detection**: Identify projects without recent activity or clear next actions
-- **Dependency Mapping**: Recognize and highlight project dependencies and prerequisites
-- **Progress Tracking**: Monitor project advancement through completed actions and milestones
+### Project Support Material Management
+- **Project Outcome Clarity**: Help define clear project outcomes, success criteria, and purpose statements that guide all related activities
+- **Support Material Organization**: Organize meeting notes, research, brainstorming sessions, and reference documents around project outcomes for easy access during planning and review
+- **Action Extraction**: Intelligently extract actionable next steps from project support material and route them to appropriate GTD category files (next-actions.md, waiting-for.md, someday-maybe.md) with inline context tags (@home, @computer, @calls, @errands)
+- **SOP-Enhanced Planning**: Integrate organization-specific Standard Operating Procedures (SOPs) with project planning workflows for consistent execution of business processes like 1:1 meetings, sales methodologies (MEDDPICC), reporting cycles, and career development discussions
+- **Project Status Tracking**: Monitor project health through clear outcomes, recent activity in support material, and linked actions across GTD category files (tracked via inline tags and queries)
+- **Dependency and Resource Mapping**: Identify and document project dependencies, required resources, and stakeholder information within project support material
 
 ### Review Automation
 - **Weekly Review Generation**: Create automated summaries of completed actions, stalled projects, and upcoming priorities

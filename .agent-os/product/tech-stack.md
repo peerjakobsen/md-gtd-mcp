@@ -73,11 +73,11 @@ Technical architecture for the MD-GTD-MCP server, based on global Agent OS stand
 - **User Accessibility**: No API key configuration required for end users
 
 ## SOP Integration
-- **Design Philosophy**: Enable organization-specific workflows through Standard Operating Procedures (Decision D009)
+- **Design Philosophy**: Enable organization-specific project planning workflows through Standard Operating Procedures (Decision D009)
 - **Simple Architecture**: Single `projects.md` file with SOP metadata linking to procedures in `GTD/SOPs/` folder
-- **Project-SOP Linking**: Projects reference SOPs via simple metadata format: `sop: <sop-name>`
-- **SOP Storage**: Separate markdown files in `GTD/SOPs/` folder for user-controlled content
-- **Prompt Enhancement**: MCP prompts dynamically read and incorporate relevant SOPs during workflow processing
+- **Project-SOP Linking**: Projects reference SOPs via simple metadata format: `sop: <sop-name>` for planning template application
+- **SOP Storage**: Separate markdown files in `GTD/SOPs/` folder for user-controlled content focused on project planning patterns
+- **Planning Template Enhancement**: MCP prompts dynamically read and incorporate relevant SOPs during project outcome definition and support material organization
 - **Template Support**: Starter SOP templates for common business procedures:
   - `1-1-meetings.md` - Manager 1:1 meeting structure and follow-up patterns
   - `MEDDPICC.md` - Sales opportunity qualification methodology
@@ -108,12 +108,101 @@ All SOPs follow a standardized template with 7 GTD-integrated sections to ensure
 
 This structure enables MCP prompts to systematically parse and apply SOPs while maintaining proper GTD methodology, transforming organization-specific procedures into actionable workflow guidance for Claude Desktop.
 
+## GTD Project Architecture
+
+### Project Support Material Structure
+Following David Allen's GTD methodology, project files serve as support material repositories rather than task containers:
+
+- **Project Outcome Definition**: Clear outcome statements, success criteria, and vision statements at the top of project files
+- **Support Material Organization**: Meeting notes, research, brainstorming sessions, reference materials, and correspondence organized around project outcomes
+- **Action Extraction Pattern**: Actionable items identified in project support material are extracted to context-based action lists during planning sessions
+- **Reference Linking**: Project files link TO actions in context lists, maintaining connection without duplication
+- **Resource and Dependency Tracking**: Contact information, budget details, timeline/milestone information, and dependency mapping within project support material
+
+### Project-Action Separation Architecture
+- **Clean Separation**: Project files contain planning and reference material; GTD category files contain tasks organized by status
+- **Linking Strategy**: Use [[wikilinks]] or markdown links to connect project support material to related actions without duplication
+- **Processing Workflow**: During weekly reviews and planning sessions, actions are extracted FROM project files TO appropriate GTD category files
+- **Status Tracking**: Project health monitored through recent activity in support material and completion of linked actions
+
+## Task Organization & Non-Duplication Architecture
+
+### Single Source of Truth Pattern
+Following GTD methodology while preventing task duplication across files:
+
+- **Task Storage Files**: Tasks exist in exactly ONE file based on GTD category status:
+  - `next-actions.md` - Active, actionable tasks ready to be completed
+  - `waiting-for.md` - Tasks delegated to others or waiting on external factors
+  - `someday-maybe.md` - Future possibilities not yet committed to action
+  - `projects.md` - Project support material ONLY (no tasks per Decision D011)
+
+- **Inline Tagging Pattern**: Tasks use inline metadata for multi-dimensional filtering:
+  ```markdown
+  - [ ] Call insurance company about policy @phone #admin
+  - [ ] Review project proposal @computer #work/client-xyz
+  - [ ] Buy groceries @errands #personal
+  ```
+
+### Context Files as Query Views
+Context files contain Obsidian Tasks queries ONLY - never actual tasks:
+
+**Example @computer.md structure:**
+```markdown
+---
+context: computer
+---
+
+# 💻 Computer Context
+
+## Current Tasks
+```tasks
+not done
+tags include @computer
+sort by due
+```
+
+## By Project
+```tasks
+not done
+tags include @computer
+group by #project
+```
+```
+
+**Example @phone.md structure:**
+```markdown
+---
+context: phone
+---
+
+# 📞 Phone Context
+
+```tasks
+not done
+tags include @phone
+sort by priority
+```
+```
+
+### Advanced Query Patterns
+- **Project + Context**: `tags include @computer AND tags include #project/website`
+- **Exclude Waiting**: `tags do not include @waiting-for`
+- **Due Soon**: `tags include @errands AND due before tomorrow`
+- **High Priority**: `tags include @home AND (priority high OR priority highest)`
+
+### Benefits of Non-Duplication Architecture
+- **Data Integrity**: Each task exists in exactly one location
+- **No Synchronization Issues**: Changes made in one place are immediately reflected in all views
+- **Clean GTD Separation**: Tasks organized by status, viewed by context
+- **Flexible Filtering**: Multi-dimensional views without data duplication
+- **Maintenance Simplicity**: Update task once, seen everywhere it's relevant
+
 ## Obsidian Integration
 - **File Format**: Markdown with YAML frontmatter
-- **Vault Structure**: Flexible folder organization
-- **Link Support**: Obsidian-style [[wikilinks]] and standard markdown links
-- **Tag Support**: Obsidian hashtag format
-- **Template Support**: Obsidian template syntax
+- **Vault Structure**: Flexible folder organization respecting GTD methodology separation
+- **Link Support**: Obsidian-style [[wikilinks]] and standard markdown links for project-action relationships
+- **Tag Support**: Obsidian hashtag format for categorization and filtering
+- **Template Support**: Obsidian template syntax for project outcome and support material templates
 
 ## GTD Workflow Support
 - **Categories**: Projects, Next Actions, Waiting For, Someday/Maybe, Reference
