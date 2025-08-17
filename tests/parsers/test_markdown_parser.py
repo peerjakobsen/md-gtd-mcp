@@ -128,7 +128,8 @@ Visit [example site](https://example.com)
         assert (
             len(gtd_file.links) == 4
         )  # @calls, @errands, [[Project Alpha]], example.com
-        assert len(gtd_file.tasks) == 0  # No tasks with #task tag in this content
+        # Inbox files now recognize all checkbox items (file-type aware behavior)
+        assert len(gtd_file.tasks) == 3  # All checkbox items recognized in inbox
 
     def test_parse_frontmatter_with_dates(self) -> None:
         """Test parsing frontmatter with various date formats."""
@@ -330,3 +331,141 @@ status: active
 
         assert gtd_file.raw_content == content
         assert gtd_file.content != content  # Should be content without frontmatter
+
+    def test_file_type_aware_task_recognition_inbox(self) -> None:
+        """Test that inbox files recognize ALL checkbox items without #task."""
+        content = """# Inbox
+
+## Quick Capture
+
+- [ ] Call dentist
+- [ ] Buy groceries @errands
+- Meeting notes from client call
+- [ ] Review budget report @computer
+- [x] Completed task
+
+## Ideas
+
+Some random thoughts here.
+- [ ] Another task idea
+"""
+        path = Path("gtd/inbox.md")
+        gtd_file = MarkdownParser.parse_file(content, path)
+
+        # Inbox files should recognize ALL checkbox items without #task tags
+        assert gtd_file.file_type == "inbox"
+        assert len(gtd_file.tasks) == 5  # All 5 checkbox items should be recognized
+
+        task_texts = [task.text for task in gtd_file.tasks]
+        assert "Call dentist" in task_texts
+        assert "Buy groceries" in task_texts
+        assert "Review budget report" in task_texts
+        assert "Completed task" in task_texts
+        assert "Another task idea" in task_texts
+
+    def test_file_type_aware_task_recognition_projects(self) -> None:
+        """Test that project files maintain #task tag requirement."""
+        content = """# Project Planning
+
+## Action Items
+
+- [ ] Call dentist
+- [ ] Buy groceries @errands #task
+- [x] Completed task #task
+- [ ] Another task without tag
+
+## Notes
+
+Some project notes here.
+"""
+        path = Path("gtd/projects.md")
+        gtd_file = MarkdownParser.parse_file(content, path)
+
+        # Project files should only recognize items with #task tags
+        assert gtd_file.file_type == "projects"
+        assert len(gtd_file.tasks) == 2  # Only tasks with #task tags
+
+        task_texts = [task.text for task in gtd_file.tasks]
+        assert "Buy groceries" in task_texts
+        assert "Completed task" in task_texts
+        # These should NOT be recognized:
+        assert "Call dentist" not in task_texts
+        assert "Another task without tag" not in task_texts
+
+    def test_file_type_aware_task_recognition_next_actions(self) -> None:
+        """Test that next-actions files maintain #task tag requirement."""
+        content = """# Next Actions
+
+## @office
+
+- [ ] Print reports #task
+- [ ] Update spreadsheet
+
+## @calls
+
+- [ ] Call vendor #task @calls
+- [ ] Schedule meeting
+"""
+        path = Path("gtd/next-actions.md")
+        gtd_file = MarkdownParser.parse_file(content, path)
+
+        assert gtd_file.file_type == "next-actions"
+        assert len(gtd_file.tasks) == 2  # Only #task tagged items
+
+        task_texts = [task.text for task in gtd_file.tasks]
+        assert "Print reports" in task_texts
+        assert "Call vendor" in task_texts
+        assert "Update spreadsheet" not in task_texts
+        assert "Schedule meeting" not in task_texts
+
+    def test_detect_file_type_integration(self) -> None:
+        """Test that detect_file_type() output is correctly used by TaskExtractor."""
+        # Test various GTD file types
+        test_cases = [
+            ("gtd/inbox.md", "inbox"),
+            ("gtd/projects.md", "projects"),
+            ("gtd/next-actions.md", "next-actions"),
+            ("gtd/waiting-for.md", "waiting-for"),
+            ("gtd/someday-maybe.md", "someday-maybe"),
+            ("gtd/reference.md", "reference"),
+            ("notes/meeting.md", "unknown"),
+        ]
+
+        content = """# Test File
+
+- [ ] Task without tag
+- [ ] Task with tag #task
+"""
+
+        for file_path, expected_type in test_cases:
+            path = Path(file_path)
+            gtd_file = MarkdownParser.parse_file(content, path)
+
+            assert gtd_file.file_type == expected_type
+
+            # Only inbox should recognize both tasks, others should recognize only #task
+            if expected_type == "inbox":
+                assert len(gtd_file.tasks) == 2  # Both tasks recognized
+            else:
+                assert len(gtd_file.tasks) == 1  # Only #task tagged task
+
+    def test_detect_file_type_handles_all_gtd_types(self) -> None:
+        """Test that detect_file_type correctly identifies all GTD file types."""
+        from md_gtd_mcp.models.gtd_file import detect_file_type
+
+        # Standard GTD files
+        assert detect_file_type(Path("gtd/inbox.md")) == "inbox"
+        assert detect_file_type(Path("gtd/projects.md")) == "projects"
+        assert detect_file_type(Path("gtd/next-actions.md")) == "next-actions"
+        assert detect_file_type(Path("gtd/waiting-for.md")) == "waiting-for"
+        assert detect_file_type(Path("gtd/someday-maybe.md")) == "someday-maybe"
+        assert detect_file_type(Path("gtd/reference.md")) == "reference"
+
+        # Context files
+        assert detect_file_type(Path("gtd/contexts/@calls.md")) == "context"
+        assert detect_file_type(Path("gtd/contexts/@home.md")) == "context"
+        assert detect_file_type(Path("gtd/contexts/@computer.md")) == "context"
+
+        # Unknown files
+        assert detect_file_type(Path("notes/meeting.md")) == "unknown"
+        assert detect_file_type(Path("random.md")) == "unknown"

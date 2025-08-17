@@ -8,7 +8,24 @@ from ..models import GTDTask
 
 
 class TaskExtractor:
-    """Extract GTD tasks from Obsidian Tasks format markdown text."""
+    """Extract GTD tasks from Obsidian Tasks format with phase-aware recognition.
+
+    Implements file-type aware task recognition to respect GTD methodology phases:
+
+    CAPTURE PHASE (inbox.md):
+    - Recognizes ALL checkbox items as tasks without #task tag requirement
+    - Enables frictionless capture following David Allen's "mind like water" principle
+    - Supports rapid thought collection without metadata decisions
+
+    CLARIFY+ PHASES (projects.md, next-actions.md, etc.):
+    - Requires explicit #task tags for Obsidian Tasks plugin compatibility
+    - Ensures clear distinction between casual notes and processed actionables
+    - Maintains reliable task querying and automation capabilities
+
+    This design preserves the fundamental GTD principle of separating capture
+    from clarification, reducing cognitive load during collection while ensuring
+    processed items are properly tagged for workflow automation.
+    """
 
     # Regex patterns for parsing task components
     TASK_LINE_PATTERN = re.compile(r"^(\s*)- \[(.)\] (.+)$", re.MULTILINE)
@@ -30,14 +47,37 @@ class TaskExtractor:
     RECURRENCE_PATTERN = re.compile(r"🔁([^#\s]+(?:\s+[^#\s]+)*?)(?=\s+#|\s*$)")
 
     @classmethod
-    def extract_tasks(cls, text: str) -> list[GTDTask]:
-        """Extract all GTD tasks from markdown text.
+    def extract_tasks(cls, text: str, file_type: str | None = None) -> list[GTDTask]:
+        """Extract GTD tasks from markdown text with file-type aware recognition.
+
+        Implements GTD phase-aware task recognition to respect the fundamental
+        distinction between Capture (inbox) and Clarify (processed) phases:
+
+        CAPTURE PHASE (inbox files):
+        - Recognizes ALL checkbox items without requiring #task tags
+        - Enables friction-free capture without metadata decisions
+        - Supports David Allen's "mind like water" capture principle
+
+        CLARIFY PHASE (projects, next-actions, etc.):
+        - Requires #task tags for Obsidian Tasks plugin compatibility
+        - Ensures only consciously processed items are recognized as tasks
+        - Maintains clear distinction between captured and clarified content
 
         Args:
-            text: Markdown text content
+            text: Markdown text content to parse for tasks
+            file_type: GTD file type determining recognition behavior:
+                      - "inbox": Recognizes all checkbox items (pure capture)
+                      - "projects", "next-actions", etc.: Requires #task tags
+                      - None: Defaults to #task requirement (backward compatibility)
 
         Returns:
-            List of GTDTask objects
+            List of GTDTask objects with parsed metadata (context, project,
+            energy, time estimates, etc.)
+
+        GTD Methodology Notes:
+            This respects the five GTD phases: Capture → Clarify → Organize →
+            Reflect → Engage. Inbox items remain unprocessed until consciously
+            moved through the Clarify phase where #task tags are added.
         """
         if not text or not text.strip():
             return []
@@ -46,21 +86,24 @@ class TaskExtractor:
         lines = text.split("\n")
 
         for line_num, line in enumerate(lines, 1):
-            if task := cls._parse_task_line(line, line_num):
+            if task := cls._parse_task_line(line, line_num, file_type):
                 tasks.append(task)
 
         return tasks
 
     @classmethod
-    def _parse_task_line(cls, line: str, line_number: int) -> GTDTask | None:
+    def _parse_task_line(
+        cls, line: str, line_number: int, file_type: str | None = None
+    ) -> GTDTask | None:
         """Parse a single line for task content.
 
         Args:
             line: Single line of text
             line_number: Line number in source text
+            file_type: Optional file type to determine task recognition behavior
 
         Returns:
-            GTDTask object if line contains a task with #task tag, None otherwise
+            GTDTask object if line contains a valid task, None otherwise
         """
         match = cls.TASK_LINE_PATTERN.match(line)
         if not match:
@@ -68,8 +111,8 @@ class TaskExtractor:
 
         _, checkbox_state, content = match.groups()
 
-        # Check if this line contains #task tag (case insensitive)
-        if not cls._has_task_tag(content):
+        # Check if this line contains #task tag based on file type
+        if not cls._has_task_tag(content, file_type):
             return None
 
         # Parse completion status
@@ -88,15 +131,36 @@ class TaskExtractor:
         return GTDTask(**task_data)
 
     @classmethod
-    def _has_task_tag(cls, content: str) -> bool:
-        """Check if content contains #task tag (case insensitive).
+    def _has_task_tag(cls, content: str, file_type: str | None = None) -> bool:
+        """Check if content contains #task tag based on GTD file type and phase.
+
+        Implements the core GTD phase separation logic:
+
+        INBOX (Capture Phase): All checkbox items are actionable without tags
+        - Supports frictionless capture without requiring categorization
+        - Aligns with David Allen's principle: "Capture everything, decide nothing"
+
+        CLARIFIED FILES (Clarify+ Phases): Only #task tagged items are actionable
+        - Ensures compatibility with Obsidian Tasks plugin workflows
+        - Maintains clear distinction between casual notes and processed tasks
+        - Enables reliable querying and automation of truly actionable items
 
         Args:
-            content: Task content to check
+            content: Task content to check for #task tag presence
+            file_type: GTD file type determining recognition behavior:
+                      - "inbox": Always returns True (pure capture)
+                      - Other types: Requires explicit #task tag (processed)
+                      - None: Defaults to requiring #task tag
 
         Returns:
-            True if #task tag is present
+            True if content should be recognized as actionable based on GTD
+            phase methodology and file type context
         """
+        # For inbox files, recognize all checkbox items without #task requirement
+        if file_type == "inbox":
+            return True
+
+        # For all other file types, require #task tag (case insensitive)
         tags = cls.TAG_PATTERN.findall(content)
         return any(tag.lower() == "task" for tag in tags)
 

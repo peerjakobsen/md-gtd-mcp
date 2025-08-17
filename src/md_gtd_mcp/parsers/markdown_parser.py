@@ -13,18 +13,52 @@ from .task_extractor import TaskExtractor
 
 
 class MarkdownParser:
-    """Parse complete GTD markdown files with frontmatter, content, tasks, and links."""
+    """Parse complete GTD markdown files with phase-aware task integration.
+
+    Orchestrates comprehensive parsing of Obsidian GTD files by:
+    1. Detecting GTD file type from path (inbox, projects, next-actions, etc.)
+    2. Parsing YAML frontmatter for project metadata
+    3. Extracting tasks using phase-aware TaskExtractor behavior
+    4. Extracting markdown and wikilinks for relationship tracking
+
+    GTD INTEGRATION:
+    Automatically passes detected file_type to TaskExtractor to ensure proper
+    task recognition behavior without requiring explicit configuration. This
+    maintains GTD phase separation seamlessly across the parsing pipeline.
+
+    SUPPORTED FILES:
+    - inbox.md: Pure capture phase (all checkboxes → tasks)
+    - projects.md: Clarified phase (#task tag required)
+    - next-actions.md: Organized phase (#task tag required)
+    - waiting-for.md, someday-maybe.md, reference.md: All require #task tags
+    - contexts/@*.md: Context-specific files (#task tag required)
+    """
 
     @classmethod
     def parse_file(cls, content: str, path: Path) -> GTDFile:
-        """Parse a complete GTD markdown file.
+        """Parse a complete GTD markdown file with phase-aware task recognition.
+
+        Automatically detects GTD file type from path and applies appropriate
+        task recognition behavior to respect GTD methodology phases:
+
+        - Inbox files: Recognizes all checkbox items (Capture phase)
+        - Other GTD files: Requires #task tags (Clarify+ phases)
+
+        This integration ensures TaskExtractor receives proper file_type context
+        for phase-aware parsing without requiring explicit configuration.
 
         Args:
-            content: Raw file content with optional frontmatter
-            path: File path for type detection and metadata
+            content: Raw file content with optional YAML frontmatter
+            path: File path for automatic GTD type detection and metadata extraction
 
         Returns:
-            GTDFile object with all parsed components
+            GTDFile object with all parsed components including phase-aware tasks,
+            frontmatter metadata, extracted links, and file type classification
+
+        GTD Integration:
+            File type detection feeds into TaskExtractor.extract_tasks() to enable
+            proper phase separation between rapid capture (inbox) and processed
+            actionable items (projects, next-actions, etc.)
         """
         # Parse frontmatter and content using python-frontmatter
         try:
@@ -42,14 +76,14 @@ class MarkdownParser:
         # Extract title from content or filename
         title = cls._extract_title(content_without_frontmatter, path)
 
-        # Extract tasks using TaskExtractor
-        tasks = TaskExtractor.extract_tasks(content_without_frontmatter)
+        # Detect file type from path
+        file_type = detect_file_type(path)
+
+        # Extract tasks using TaskExtractor with file type for phase-aware recognition
+        tasks = TaskExtractor.extract_tasks(content_without_frontmatter, file_type)
 
         # Extract links using LinkExtractor
         links = LinkExtractor.extract_links(content_without_frontmatter)
-
-        # Detect file type from path
-        file_type = detect_file_type(path)
 
         return GTDFile(
             path=str(path),

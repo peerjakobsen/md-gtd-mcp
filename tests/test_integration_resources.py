@@ -203,14 +203,20 @@ class TestGTDIntegrationResources:
 
             inbox_data = inbox_result["file"]
 
-            # Should have fewer tasks than next-actions (some unprocessed)
-            assert len(inbox_data["tasks"]) < 10
+            # With GTD phase-aware recognition, inbox recognizes ALL checkbox items
+            # This is correct GTD behavior - capture phase doesn't require #task tags
+            # The test fixture has 18 checkbox items total
+            assert (
+                len(inbox_data["tasks"]) >= 15
+            )  # Should capture most/all checkbox items
+            assert len(inbox_data["tasks"]) <= 20  # Reasonable upper bound
 
-            # Should contain some processed (#task) items
-            # Unprocessed items are plain text, not checkboxes with #task
+            # Verify that we're actually capturing tasks without #task tags
+            # (this is the key improvement from Decision D006)
             processed_tasks = len(inbox_data["tasks"])
-            assert processed_tasks >= 2  # At least some processed
-            assert processed_tasks <= 4  # But not everything
+            assert (
+                processed_tasks >= 15
+            )  # Significant number of captured items  # But reasonable number for inbox
 
     def test_project_references_not_duplicates_with_resources(self) -> None:
         """Test that projects file references tasks rather than duplicating them.
