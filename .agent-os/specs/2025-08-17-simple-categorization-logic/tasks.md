@@ -35,7 +35,7 @@
   - Simple pattern matching utilities (no LLM but ok to use python libraries rapidfuzz, rank_bm25 and sentence-transformers)
   - Context suggestion helpers based on keyword presence
   - Multiple context support for items matching several patterns
-- [ ] 2.5 Write tests for time/complexity indicator patterns
+- [x] 2.5 Write tests for time/complexity indicator patterns
   - Test keyword patterns for quick tasks (2-minute rule hints)
     - Use `rapidfuzz.process.extract()` for fuzzy matching keywords with typo tolerance
     - Test threshold values (80-90) for "quick", "simple", "brief" variations
@@ -51,7 +51,7 @@
   - Test time complexity estimation
     - Use `textstat.lexicon_count()` and `textstat.syllable_count()` for complexity scoring
     - Validate 2-minute rule estimation: <10 words + high readability = 2-minute task
-- [ ] 2.6 Implement static indicator pattern collections
+- [x] 2.6 Implement static indicator pattern collections
   - Two-minute rule keyword indicators (quick, simple, brief, etc.)
     - Use `spacy.matcher.Matcher` for rule-based patterns: [{"LOWER": {"IN": ["quick", "simple", "brief"]}}]
     - Use `rapidfuzz.process.extract()` as fallback for fuzzy keyword matching (threshold: 85)
