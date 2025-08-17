@@ -37,24 +37,87 @@
   - Multiple context support for items matching several patterns
 - [ ] 2.5 Write tests for time/complexity indicator patterns
   - Test keyword patterns for quick tasks (2-minute rule hints)
+    - Use `rapidfuzz.process.extract()` for fuzzy matching keywords with typo tolerance
+    - Test threshold values (80-90) for "quick", "simple", "brief" variations
   - Test project complexity indicators
+    - Use `spacy.matcher.Matcher` for linguistic patterns like [verb + noun] combinations
+    - Test patterns: "implement system", "develop feature", "create architecture"
   - Test delegation/waiting patterns
+    - Use `spacy` dependency parsing for "waiting on [PERSON]" structures
+    - Use `rapidfuzz` for fuzzy matching delegation verbs: "assigned", "delegated", "asked"
   - Test pattern priority when multiple matches occur
+    - Test conflict resolution (e.g., "quick implementation" = project wins over two-minute)
+    - Use `textstat.flesch_reading_ease()` and word count as tiebreakers
+  - Test time complexity estimation
+    - Use `textstat.lexicon_count()` and `textstat.syllable_count()` for complexity scoring
+    - Validate 2-minute rule estimation: <10 words + high readability = 2-minute task
 - [ ] 2.6 Implement static indicator pattern collections
   - Two-minute rule keyword indicators (quick, simple, brief, etc.)
+    - Use `spacy.matcher.Matcher` for rule-based patterns: [{"LOWER": {"IN": ["quick", "simple", "brief"]}}]
+    - Use `rapidfuzz.process.extract()` as fallback for fuzzy keyword matching (threshold: 85)
+    - Include time indicators: "just a second", "real quick", "one minute"
   - Project complexity indicators (implement, develop, create, etc.)
+    - Use `spacy` linguistic patterns: [{"LOWER": "implement"}, {"POS": "NOUN"}]
+    - Use `textstat.flesch_reading_ease()` < 50 + word count > 20 as complexity signals
+    - Pattern examples: "multi-step", "multi-phase", "research and develop"
   - Delegation patterns (waiting, pending, depends, etc.)
+    - Use `spacy` dependency parsing for "waiting on [PERSON]" structures
+    - Use `rapidfuzz` for delegation verb variations: "assigned" → "asigned", "delegated"
+    - Include context patterns: "@mentions", "follow up with", "need approval from"
   - Priority/urgency keywords for prompt context
+    - Use `spacy.matcher.PhraseMatcher` for exact phrase matching: "ASAP", "urgent", "critical"
+    - Use `rapidfuzz` for deadline patterns: "due today" → "do today", "due tomorow"
+    - Include temporal urgency: "EOD", "COB", "by end of week"
+  - Create hybrid analyzer combining all approaches
+    - GTDPatternAnalyzer class with configurable thresholds
+    - Pattern priority system: priority > project > delegation > two-minute
+    - Confidence scoring based on pattern strength and fuzzy match scores
 - [ ] 2.7 Create GTD methodology documentation and constants
   - Document GTD decision tree logic for prompts
+    - Include decision flowchart with pattern matching integration points
+    - Document when to use spacy vs rapidfuzz vs textstat for each decision node
+    - Create examples showing library combinations for edge cases
   - Define category descriptions and usage rules
+    - Document pattern matching confidence thresholds for each GTD category
+    - Include library-specific configuration examples (spacy model, rapidfuzz thresholds)
+    - Create troubleshooting guide for pattern matching conflicts
   - Create context definitions and typical use cases
+    - Map GTD contexts to pattern detection strategies (@calls → phone keywords + spacy patterns)
+    - Document performance characteristics of each library approach
+    - Include examples of hybrid detection (spacy + rapidfuzz for robustness)
   - Generate prompt template building utilities
+    - Create utilities to convert pattern matching results into prompt context
+    - Document how static patterns inform Claude's reasoning process
+    - Include token optimization strategies for prompt efficiency
+  - Create pattern matching strategy documentation
+    - Performance benchmarks: spacy (linguistic) vs rapidfuzz (fuzzy) vs textstat (complexity)
+    - Memory usage guidelines for en_core_web_sm model vs keyword-only approaches
+    - Offline operation confirmation (no external API dependencies)
 - [ ] 2.8 Verify all static rule engine tests pass
   - Integration tests with prompt generation
+    - Test spacy pattern extraction feeds correctly into MCP prompt context
+    - Validate rapidfuzz results integrate with prompt hints for Claude
+    - Test textstat complexity scores inform prompt decision guidance
   - Validation of rule consistency
+    - Use `hypothesis` for property-based testing of pattern matching edge cases
+    - Test pattern conflict resolution with random text generation
+    - Validate that spacy + rapidfuzz + textstat combinations produce consistent results
   - Performance tests for pattern matching
+    - Benchmark spacy.matcher performance with 1000+ text samples
+    - Test rapidfuzz.process.extract() speed with large keyword dictionaries
+    - Measure textstat analysis time for varying text complexity
+    - Validate sub-100ms response time for single text analysis
   - Coverage verification for all GTD methodology areas
+    - Use `pytest-cov` to ensure >95% code coverage for pattern matching modules
+    - Test all spacy pattern combinations (linguistic rules)
+    - Test all rapidfuzz threshold configurations (fuzzy matching)
+    - Test all textstat metrics integration (complexity scoring)
+    - Property-based testing with `hypothesis.strategies.text()` for robustness
+  - Library-specific robustness testing
+    - Test spacy with malformed/non-English text (graceful degradation)
+    - Test rapidfuzz with empty strings, special characters, and Unicode
+    - Test textstat with edge cases (single words, very long texts)
+    - Validate memory usage stays within acceptable bounds for MCP server
 
 ### 3. Create core MCP prompts (Claude Desktop intelligence)
 **Note: These prompts use static rules from Task 2 to guide Claude Desktop's LLM reasoning**
@@ -130,36 +193,101 @@
 
 - [ ] 6.1 Write tests for email keyword pattern detection
   - Test email-specific action keywords (reply, forward, send)
+    - Use `spacy.matcher.Matcher` for verb-object patterns: [{"LOWER": "reply"}, {"LOWER": "to"}]
+    - Use `rapidfuzz` for typo-tolerant email verbs: "reply" → "relpy", "respond" → "respnd"
+    - Test email signature detection as context clue for @computer assignment
   - Test email context patterns (@computer required)
+    - Use `spacy` to detect email headers/signatures as automatic @computer indicators
+    - Test pattern: "From:", "To:", "Subject:" → automatically suggests @computer context
   - Test urgency indicators in email content
+    - Use `rapidfuzz` for deadline variations: "EOD" → "end of day", "ASAP" → "as soon as possible"
+    - Use `spacy` for temporal expressions: "by [TIME]", "before [DATE]"
 - [ ] 6.2 Implement email-specific static keyword patterns
   - Email action verb patterns (reply, respond, send, forward)
+    - Use `spacy.matcher.PhraseMatcher` for exact email action phrases
+    - Use `rapidfuzz.process.extract()` with email-specific dictionary for fuzzy matching
+    - Include variations: "get back to", "follow up with", "send update to"
   - Email urgency keywords (urgent, asap, deadline)
+    - Use `spacy` for temporal pattern extraction: "due [DATE]", "by [TIME]"
+    - Use `rapidfuzz` for urgency acronym variations: "ASAP", "asap", "a.s.a.p"
   - Email delegation patterns (cc, bcc, forward to)
+    - Use `spacy` dependency parsing for "cc [PERSON]", "forward to [PERSON]" structures
+    - Use `rapidfuzz` for delegation variations: "copy" → "cc", "send to" → "forward to"
 - [ ] 6.3 Write tests for meeting note keyword patterns
   - Test meeting-specific keywords (discuss, agenda, follow-up)
+    - Use `spacy.matcher.Matcher` for meeting structure patterns: [{"LOWER": "agenda"}, {"LOWER": "item"}]
+    - Use `rapidfuzz` for meeting terminology variations: "follow-up" → "followup", "follow up"
+    - Test bullet point detection as action item indicator using spacy tokenization
   - Test action item extraction patterns (action, todo, assign)
+    - Use `spacy` dependency parsing for "assigned to [PERSON]" structures
+    - Use `rapidfuzz` for action variations: "todo" → "to do", "to-do", "action item"
+    - Test numbered/bulleted list detection as action context indicators
   - Test meeting context hints (@office, @calls for follow-ups)
+    - Use pattern analysis: "call [PERSON]" → @calls, "schedule meeting" → @office
+    - Use `spacy` for person name extraction to auto-suggest @calls context
 - [ ] 6.4 Implement meeting note static keyword collections
   - Meeting action keywords (follow-up, schedule, prepare)
+    - Use `spacy.matcher.Matcher` for meeting action patterns: [{"LOWER": "schedule"}, {"POS": "NOUN"}]
+    - Use `rapidfuzz` for meeting action fuzzy matching with high confidence threshold (90+)
+    - Include temporal meeting patterns: "next week", "by Friday", "before the deadline"
   - Meeting outcome patterns (decided, agreed, action item)
+    - Use `spacy` for decision pattern extraction: "decided to", "agreed that", "action item:"
+    - Use `rapidfuzz` for outcome terminology: "decision" → "decided", "agreement" → "agreed"
   - Meeting delegation keywords (assigned to, responsible for)
+    - Use `spacy` dependency parsing for delegation structures with person entities
+    - Use `rapidfuzz` for delegation variations: "responsible" → "responsible for", "owns"
 - [ ] 6.5 Write tests for delegation keyword patterns
   - Test waiting-for indicators (waiting, pending, depends on)
+    - Use `spacy.matcher.Matcher` for dependency patterns: [{"LOWER": "waiting"}, {"LOWER": "for"}]
+    - Use `rapidfuzz` for waiting variations: "pending" → "pending on", "blocked" → "blocked by"
+    - Test temporal waiting patterns: "waiting until", "pending approval from"
   - Test delegation verbs (assigned, delegated, asked)
+    - Use `spacy` dependency parsing for delegation with person extraction
+    - Use `rapidfuzz` for delegation verb variations: "assigned" → "asigned", "delegated" → "handed off"
+    - Test passive voice detection: "was asked to" vs "asked [PERSON] to"
   - Test person name extraction hints for prompts
+    - Use `spacy.ents` for PERSON entity recognition in delegation contexts
+    - Use `rapidfuzz` for name variations and nicknames in follow-up patterns
+    - Test @mention pattern detection as person indicators
 - [ ] 6.6 Implement delegation detection keyword patterns
   - Waiting-for trigger words (waiting, pending, blocked by)
+    - Use `spacy.matcher.Matcher` for complex waiting patterns with dependency structure
+    - Use `rapidfuzz` for status variations: "pending" → "awaiting", "blocked" → "stuck on"
+    - Include escalation patterns: "overdue from", "follow up with"
   - Delegation action verbs (asked, assigned, delegated, requested)
+    - Use `spacy` for verb-person-action parsing: "asked [PERSON] to [ACTION]"
+    - Use `rapidfuzz` for delegation synonyms: "assigned" → "given to", "handed off"
+    - Test delegation confidence scoring based on pattern strength
   - Follow-up reminder keywords (check, follow up, remind)
+    - Use `spacy.matcher.Matcher` for follow-up action patterns
+    - Use `rapidfuzz` for reminder variations: "check in" → "check up", "follow up" → "followup"
+    - Include temporal follow-up patterns: "remind me in", "check back"
 - [ ] 6.7 Create extensible static pattern system
   - Pattern category framework for new domains
+    - Design plugin architecture for domain-specific pattern libraries
+    - Use `pydantic` for pattern configuration validation and type safety
+    - Create abstract pattern classes that combine spacy + rapidfuzz + textstat
   - Priority ordering for overlapping pattern matches
+    - Implement weighted scoring system combining pattern confidence and domain relevance
+    - Use pattern hierarchy: exact spacy matches > fuzzy rapidfuzz > textstat metrics
+    - Create conflict resolution with configurable precedence rules
   - Pattern composition utilities for prompt building
+    - Create utilities to aggregate pattern results into structured prompt context
+    - Implement pattern-to-prompt-hint conversion for Claude guidance
+    - Include confidence aggregation and uncertainty indication for prompts
 - [ ] 6.8 Verify all pattern recognition tests pass
   - Integration with core rule engine (Task 2)
+    - Test domain-specific patterns integrate cleanly with base GTD patterns
+    - Validate pattern library loading and configuration management
+    - Test pattern conflict resolution across domains (email vs meeting vs delegation)
   - Performance testing for large pattern sets
+    - Benchmark combined spacy + rapidfuzz + textstat performance with 10k+ patterns
+    - Test memory usage with multiple domain pattern libraries loaded
+    - Validate sub-200ms response time for complex pattern analysis
   - Validation of pattern precedence rules
+    - Test edge cases where multiple patterns match with similar confidence
+    - Use `hypothesis` for property-based testing of pattern conflict resolution
+    - Validate that higher-priority patterns consistently override lower-priority ones
 
 ### 7. Integration testing and documentation
 - [ ] 7.1 Test single item categorization workflow

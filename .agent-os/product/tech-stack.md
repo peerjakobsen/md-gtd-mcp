@@ -21,6 +21,7 @@ Technical architecture for the MD-GTD-MCP server, based on global Agent OS stand
 - **Markdown Processing**: python-frontmatter + markdown libraries
 - **File System Operations**: pathlib + os
 - **Text Processing**: Regular expressions + NLP libraries (if needed)
+- **Pattern Matching & Similarity**: rapidfuzz, rank_bm25, spacy, sentence-transformers (when appropriate for static pattern recognition)
 - **Configuration**: pydantic for settings validation
 
 ## MCP Integration
