@@ -1,0 +1,129 @@
+{
+  "pattern_to_prompt_converters": {
+    "context_hints": {
+      "function": "convert_context_analysis_to_prompt_hints",
+      "input": "GTDRuleEngine.get_context_suggestions_with_explanations()",
+      "output_format": {
+        "template": "Context Analysis for '{text}':\n- Suggested contexts: {contexts}\n- Confidence: {confidence}\n- Reasoning: {explanations}",
+        "variables": ["text", "contexts", "confidence", "explanations"],
+        "token_optimization": "Limit to top 3 contexts, truncate explanations to 50 chars"
+      },
+      "example": {
+        "input": {
+          "contexts": ["@calls", "@computer"],
+          "confidence": "high",
+          "explanations": [
+            "@calls: phone keyword detected",
+            "@computer: email pattern found"
+          ]
+        },
+        "output": "Context Analysis:\n- Suggested contexts: @calls, @computer\n- Confidence: high\n- Reasoning: @calls: phone keyword; @computer: email pattern"
+      }
+    },
+    "category_hints": {
+      "function": "convert_categorization_analysis_to_prompt_guidance",
+      "input": "GTDRuleEngine.analyze_comprehensive()",
+      "output_format": {
+        "template": "GTD Category Analysis:\n- Recommended: {category} ({confidence}% confidence)\n- Pattern matches: {patterns}\n- Key indicators: {indicators}",
+        "variables": [
+          "category",
+          "confidence",
+          "patterns",
+          "indicators"
+        ],
+        "token_optimization": "Round confidence to nearest 10%, limit patterns to 2 strongest"
+      },
+      "example": {
+        "input": {
+          "primary_category": "project",
+          "confidence": 0.87,
+          "pattern_scores": {"project": 0.9, "two_minute": 0.1}
+        },
+        "output": "GTD Category Analysis:\n- Recommended: project (90% confidence)\n- Strong project indicators detected\n- Complexity and multi-step patterns found"
+      }
+    },
+    "complexity_hints": {
+      "function": "convert_complexity_analysis_to_prompt_context",
+      "input": "GTDPatternAnalyzer.get_project_complexity_indicators()",
+      "output_format": {
+        "template": "Complexity Analysis:\n- Two-minute rule: {two_minute}\n- Project indicators: {project}\n- Delegation patterns: {delegation}",
+        "variables": ["two_minute", "project", "delegation"],
+        "token_optimization": "Use boolean flags instead of detailed explanations"
+      },
+      "example": {
+        "input": {
+          "two_minute": false,
+          "project": true,
+          "delegation": false
+        },
+        "output": "Complexity Analysis:\n- Two-minute rule: No (complex task)\n- Project indicators: Yes (multi-step detected)\n- Delegation patterns: No (your responsibility)"
+      }
+    }
+  },
+  "prompt_optimization_strategies": {
+    "token_efficiency": {
+      "max_tokens_per_analysis": 200,
+      "prioritization": [
+        "1. Primary category recommendation (highest priority)",
+        "2. Context suggestions (high priority)",
+        "3. Confidence indicators (medium priority)",
+        "4. Detailed explanations (low priority)"
+      ],
+      "truncation_rules": {
+        "explanations": "Limit to 50 characters each",
+        "context_list": "Maximum 3 contexts",
+        "pattern_matches": "Top 2 strongest matches only",
+        "confidence_scores": "Round to nearest 10%"
+      }
+    },
+    "context_window_optimization": {
+      "claude_context_limit": 200000,
+      "reserved_for_prompt_template": 1000,
+      "reserved_for_gtd_rules": 2000,
+      "available_for_analysis": 500,
+      "compression_strategies": [
+        "Use abbreviations for common terms",
+        "Remove redundant explanations",
+        "Combine similar pattern matches",
+        "Use structured format instead of prose"
+      ]
+    },
+    "dynamic_prompt_adaptation": {
+      "simple_items": {
+        "criteria": "confidence > 0.8 and single pattern match",
+        "template": "Quick categorization: {category} ({confidence}%)",
+        "token_savings": "~150 tokens vs full analysis"
+      },
+      "complex_items": {
+        "criteria": "confidence < 0.6 or multiple strong patterns",
+        "template": "Detailed analysis needed: {full_analysis}",
+        "additional_guidance": "Include all pattern matches and reasoning"
+      },
+      "ambiguous_items": {
+        "criteria": "multiple patterns with similar confidence",
+        "template": "Ambiguous categorization: Consider {alternatives}",
+        "escalation": "Provide multiple options with trade-offs"
+      }
+    }
+  },
+  "claude_guidance_integration": {
+    "decision_tree_injection": {
+      "purpose": "Guide Claude through GTD methodology step-by-step",
+      "placement": "Beginning of prompt after context setup",
+      "format": "Structured decision tree with pattern hints at each node",
+      "token_cost": "~300 tokens for complete tree"
+    },
+    "pattern_hint_placement": {
+      "context_hints": "After item presentation, before categorization request",
+      "complexity_indicators": "Integrated into decision tree nodes",
+      "confidence_modifiers": "After initial categorization, as validation",
+      "reasoning_guides": "At end of prompt for explanation generation"
+    },
+    "static_rule_references": {
+      "gtd_methodology": "Reference to GTDMethodology.CLARIFYING_QUESTIONS",
+      "category_definitions": "Reference to GTDMethodology.CATEGORY_DESCRIPTIONS",
+      "context_definitions": "Reference to GTDMethodology.CONTEXT_DEFINITIONS",
+      "pattern_keywords": "Reference to GTDPatterns keyword lists"
+    }
+  }
+}

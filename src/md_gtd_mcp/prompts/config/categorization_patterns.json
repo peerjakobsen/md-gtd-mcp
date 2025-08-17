@@ -1,0 +1,33 @@
+{
+  "two_minute_indicators": [
+    "quick", "simple", "just", "quickly", "brief", "short", "fast", "immediately", "rapid", "swift", "instant", "moment", "second", "minute", "easy", "straightforward", "simple"
+  ],
+  "project_indicators": [
+    "project", "initiative", "implement", "develop", "create", "build", "design", "plan", "organize", "establish", "set up", "launch", "complete", "finish", "multiple", "several", "various", "many", "comprehensive", "full", "entire", "whole", "system", "process", "workflow", "procedure", "program", "campaign", "strategy"
+  ],
+  "delegation_patterns": [
+    "waiting", "pending", "assigned", "delegated", "asked", "requested", "depends on", "blocked by", "waiting for", "expecting", "anticipating", "scheduled", "follow up", "check with", "remind", "chase", "waiting to hear", "pending response", "outstanding"
+  ],
+  "priority_indicators": {
+    "high": [
+      "urgent", "asap", "immediately", "critical", "emergency", "priority", "important"
+    ],
+    "medium": [
+      "soon", "timely", "reasonable", "normal", "standard"
+    ],
+    "low": [
+      "someday", "eventually", "when possible", "low priority", "nice to have"
+    ]
+  },
+  "time_indicators": {
+    "quick": [
+      "minute", "minutes", "quick", "fast", "brief", "short"
+    ],
+    "medium": [
+      "hour", "hours", "session", "morning", "afternoon"
+    ],
+    "long": [
+      "day", "days", "week", "weeks", "month", "months", "long term"
+    ]
+  }
+}

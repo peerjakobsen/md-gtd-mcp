@@ -1,0 +1,25 @@
+{
+  "context_patterns": {
+    "@calls": [
+      "call", "phone", "dial", "contact", "reach out", "speak with", "discuss with", "talk to", "ring", "telephone", "voicemail", "conference call", "zoom", "meeting call"
+    ],
+    "@computer": [
+      "email", "write", "code", "research", "analyze", "review", "type", "document", "spreadsheet", "presentation", "website", "online", "internet", "browse", "download", "upload", "backup", "design", "edit", "format", "calculate", "database", "software"
+    ],
+    "@home": [
+      "home", "house", "family", "personal", "weekend", "evening", "kitchen", "garden", "yard", "garage", "basement", "attic", "laundry", "cleaning", "maintenance", "repair", "organize closet"
+    ],
+    "@office": [
+      "office", "work", "workplace", "meeting", "colleague", "boss", "conference room", "desk", "workplace", "team", "department", "business hours", "during work", "at work"
+    ],
+    "@errands": [
+      "buy", "pick up", "shop", "store", "bank", "post office", "pharmacy", "grocery", "mall", "shopping", "purchase", "get", "collect", "return", "exchange", "drop off", "deliver", "gas station", "dry cleaner", "library"
+    ],
+    "@phone": [
+      "text", "sms", "mobile", "smartphone", "app", "notification", "mobile app", "check phone", "mobile call", "cell phone"
+    ],
+    "@anywhere": [
+      "think", "brainstorm", "consider", "reflect", "meditate", "plan", "read", "review notes", "ponder", "contemplate", "decide"
+    ]
+  }
+}

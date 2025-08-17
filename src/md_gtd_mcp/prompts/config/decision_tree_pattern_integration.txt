@@ -1,0 +1,200 @@
+GTD Decision Tree with Pattern Matching Integration
+
+═══════════════════════════════════════════════════════════════════════════════
+1. ACTIONABILITY ASSESSMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Question: "Is this actionable?"
+├─ Pattern Detection Strategy:
+│  ├─ spaCy: Linguistic analysis for verb patterns and action words
+│  ├─ rapidfuzz: Fuzzy matching for action verbs with typo tolerance
+│  └─ textstat: Complexity analysis (simple = likely actionable)
+│
+├─ NO → Non-Actionable Classification:
+│  ├─ Reference Material
+│  │  ├─ Patterns: "info", "documentation", "remember", "note"
+│  │  ├─ spaCy: Entity recognition for names, dates, facts
+│  │  └─ Context: Usually @computer for digital storage
+│  │
+│  ├─ Someday/Maybe
+│  │  ├─ Patterns: "someday", "maybe", "might", "consider", "think about"
+│  │  ├─ rapidfuzz: Fuzzy matching for uncertainty expressions
+│  │  └─ Context: @anywhere for reflection
+│  │
+│  └─ Trash
+│     ├─ Patterns: "delete", "ignore", "nevermind", "cancel"
+│     └─ No context assignment needed
+│
+└─ YES → Actionable Items (Continue to Step 2)
+
+═══════════════════════════════════════════════════════════════════════════════
+2. OUTCOME ASSESSMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Question: "What's the successful outcome?"
+├─ Pattern Detection Strategy:
+│  ├─ spaCy: [VERB] + [NOUN] patterns for project identification
+│  ├─ textstat: Word count > 20 + complexity > moderate = project
+│  └─ rapidfuzz: Multi-step keywords ("implement", "develop", "create")
+│
+├─ Multiple Actions Required → PROJECT
+│  ├─ Project Indicators (spaCy patterns):
+│  │  ├─ [{"LOWER": "implement"}, {"POS": "NOUN"}]
+│  │  ├─ [{"LOWER": "develop"}, {"POS": "NOUN"}]
+│  │  ├─ [{"LOWER": "create"}, {"POS": "NOUN"}]
+│  │  └─ [{"LOWER": {"IN": ["multi", "several", "various"]}}, {"POS": "NOUN"}]
+│  │
+│  ├─ Complexity Indicators (textstat metrics):
+│  │  ├─ flesch_reading_ease() < 50 (complex language)
+│  │  ├─ lexicon_count() > 20 (long description)
+│  │  └─ syllable_count() > 30 (complex words)
+│  │
+│  └─ Context Assignment: Usually @computer or @office for planning
+│
+└─ Single Action → Continue to Step 3
+
+═══════════════════════════════════════════════════════════════════════════════
+3. TIME ASSESSMENT (Two-Minute Rule)
+═══════════════════════════════════════════════════════════════════════════════
+
+Question: "Will this take less than 2 minutes?"
+├─ Pattern Detection Strategy:
+│  ├─ rapidfuzz: Fuzzy matching for time keywords (threshold: 85)
+│  ├─ spaCy: Time entity recognition and quick-action patterns
+│  └─ textstat: Simple text (< 10 words + high readability = 2-minute task)
+│
+├─ YES → DO IT NOW
+│  ├─ Two-Minute Indicators:
+│  │  ├─ rapidfuzz matches: "quick" → "quik", "simple" → "smiple"
+│  │  ├─ spaCy patterns: [{"LOWER": {"IN": ["quick", "simple", "brief"]}}]
+│  │  └─ Time phrases: "just a second", "real quick", "one minute"
+│  │
+│  ├─ Validation (textstat):
+│  │  ├─ lexicon_count() < 10 (short description)
+│  │  └─ flesch_reading_ease() > 80 (simple language)
+│  │
+│  └─ Action: Complete immediately, no tracking needed
+│
+└─ NO → Continue to Step 4
+
+═══════════════════════════════════════════════════════════════════════════════
+4. RESPONSIBILITY ASSESSMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Question: "Am I the right person to do this?"
+├─ Pattern Detection Strategy:
+│  ├─ spaCy: Dependency parsing for "waiting on [PERSON]" structures
+│  ├─ rapidfuzz: Delegation verb variations with typo tolerance
+│  └─ Entity recognition for person names and @mentions
+│
+├─ NO → DELEGATE → Waiting For
+│  ├─ Delegation Patterns (spaCy dependency parsing):
+│  │  ├─ "asked [PERSON] to [ACTION]"
+│  │  ├─ "assigned to [PERSON]"
+│  │  ├─ "waiting for [PERSON]"
+│  │  └─ "depends on [PERSON]"
+│  │
+│  ├─ Fuzzy Delegation Verbs (rapidfuzz threshold: 80):
+│  │  ├─ "assigned" → "asigned", "delegated" → "delegated"
+│  │  └─ "requested" → "reqested", "asked" → "askd"
+│  │
+│  ├─ Context Patterns:
+│  │  ├─ @waiting for tracking delegated items
+│  │  └─ @agenda for items to discuss with specific people
+│  │
+│  └─ Person Entity Recognition (spaCy):
+│     ├─ PERSON entities for delegation tracking
+│     └─ @mention patterns as person indicators
+│
+└─ YES → NEXT ACTION (Continue to Context Assignment)
+
+═══════════════════════════════════════════════════════════════════════════════
+5. CONTEXT ASSIGNMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+Context Detection using Hybrid Approach:
+├─ Primary Method (rapidfuzz): Fuzzy keyword matching
+├─ Secondary Method (spaCy): Linguistic pattern analysis
+└─ Validation (textstat): Complexity-based context hints
+
+@calls Context:
+├─ Keywords: "call", "phone", "dial", "contact", "reach out"
+├─ spaCy patterns: [{"LOWER": "call"}, {"ENT_TYPE": "PERSON"}]
+├─ rapidfuzz: "call" → "cal", "phone" → "fone" (threshold: 85)
+└─ Confidence: High if person entity + call verb detected
+
+@computer Context:
+├─ Keywords: "email", "write", "code", "research", "analyze"
+├─ spaCy patterns: [{"LOWER": {"IN": ["email", "type", "write"]}}]
+├─ Default for: Email signatures, URLs, file extensions
+└─ Confidence: High if digital activity keywords present
+
+@home Context:
+├─ Keywords: "home", "house", "family", "personal", "weekend"
+├─ Time patterns: "evening", "weekend", "after work"
+├─ Location entities: Home address, family member names
+└─ Confidence: High if personal/family context detected
+
+@office Context:
+├─ Keywords: "office", "work", "meeting", "colleague", "boss"
+├─ Time patterns: "business hours", "during work", "workday"
+├─ Professional entities: Company names, work roles
+└─ Confidence: High if work-related entities present
+
+@errands Context:
+├─ Keywords: "buy", "pick up", "shop", "store", "bank"
+├─ Location entities: Store names, addresses
+├─ Commercial verbs: "purchase", "get", "collect"
+└─ Confidence: High if commercial/location patterns
+
+@anywhere Context:
+├─ Keywords: "think", "brainstorm", "consider", "reflect"
+├─ Mental verbs: "decide", "plan", "contemplate"
+├─ Default for: Pure thinking tasks
+└─ Confidence: Medium (catchall category)
+
+═══════════════════════════════════════════════════════════════════════════════
+PATTERN MATCHING PRIORITY SYSTEM
+═══════════════════════════════════════════════════════════════════════════════
+
+Conflict Resolution Order:
+1. Priority/Urgency (Weight: 4) - Overrides all other patterns
+2. Project Complexity (Weight: 3) - Takes precedence over simple actions
+3. Delegation (Weight: 2) - Important for responsibility tracking
+4. Two-Minute Rule (Weight: 1) - Lowest priority in conflicts
+
+Example Conflict Resolution:
+├─ "quick implementation project" →
+│  ├─ Two-minute: "quick" (confidence: 0.8, weight: 1) = 0.8
+│  ├─ Project: "implementation" (confidence: 0.9, weight: 3) = 2.7
+│  └─ Winner: Project (higher weighted score)
+│
+└─ Confidence Calculation: max(weighted_scores) / max_possible_weight
+
+═══════════════════════════════════════════════════════════════════════════════
+LIBRARY-SPECIFIC USAGE GUIDELINES
+═══════════════════════════════════════════════════════════════════════════════
+
+spaCy (Linguistic Analysis):
+├─ Best for: Grammar patterns, entity recognition, dependency parsing
+├─ Use when: Need to understand sentence structure and relationships
+├─ Performance: ~50ms for average text, requires en_core_web_sm model
+└─ Fallback: Basic keyword matching if model unavailable
+
+rapidfuzz (Fuzzy Matching):
+├─ Best for: Typo tolerance, keyword variations, approximate matching
+├─ Use when: User input may have spelling errors or abbreviations
+├─ Performance: ~5ms for keyword lists, scales with dictionary size
+└─ Thresholds: 85+ for high confidence, 70+ for suggestions
+
+textstat (Complexity Analysis):
+├─ Best for: Reading difficulty, text length, complexity scoring
+├─ Use when: Need to assess cognitive load or task complexity
+├─ Performance: ~1ms for text analysis, very lightweight
+└─ Metrics: Flesch score, word count, syllable count for complexity
+
+Hybrid Strategy Benefits:
+├─ Robustness: Multiple validation methods reduce false positives
+├─ Fallback: Graceful degradation when advanced features unavailable
+├─ Confidence: Aggregate scoring provides reliability indicators
+└─ Offline: All analysis happens locally without API dependencies

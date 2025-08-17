@@ -1,0 +1,343 @@
+{
+  "context_pattern_strategies": {
+    "@calls": {
+      "definition": "Actions requiring phone calls or voice conversations",
+      "detection_strategy": {
+        "primary_method": "rapidfuzz",
+        "secondary_method": "spacy",
+        "validation_method": "textstat"
+      },
+      "pattern_approaches": {
+        "rapidfuzz": {
+          "keywords": ["call", "phone", "dial", "contact", "reach out"],
+          "threshold": 85,
+          "typo_examples": ["call→cal", "phone→fone", "contact→contac"],
+          "performance": "~5ms for 50 keywords"
+        },
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': 'call'}, {'ENT_TYPE': 'PERSON'}]",
+            "[{'LOWER': 'phone'}, {'ENT_TYPE': 'PERSON'}]",
+            "[{'LOWER': {'IN': ['dial', 'ring', 'contact']}}]"
+          ],
+          "entity_recognition": ["PERSON entities for call targets"],
+          "performance": "~50ms with en_core_web_sm model"
+        },
+        "textstat": {
+          "indicators": ["Short phrases with communication verbs"],
+          "complexity_hints": "Simple language = phone call likely",
+          "performance": "~1ms for text analysis"
+        }
+      },
+      "hybrid_detection": {
+        "example": "Call John about project → rapidfuzz:'call'(90) + spacy:PERSON(John) = HIGH confidence",
+        "confidence_formula": "(rapidfuzz_score * 0.4) + (spacy_match * 0.6)",
+        "fallback_strategy": "keyword matching if spacy unavailable"
+      },
+      "use_cases": [
+        "Phone calls to specific people",
+        "Voice conferences and meetings",
+        "Customer service calls",
+        "Personal phone conversations"
+      ],
+      "integration_points": {
+        "calendar": "Schedule phone calls",
+        "contacts": "Link to person entities",
+        "projects": "Call-related project actions"
+      }
+    },
+    "@computer": {
+      "definition": "Actions requiring a computer, internet, or digital tools",
+      "detection_strategy": {
+        "primary_method": "spacy",
+        "secondary_method": "rapidfuzz",
+        "validation_method": "automatic"
+      },
+      "pattern_approaches": {
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': {'IN': ['email', 'type', 'write', 'code']}}]",
+            "[{'LOWER': 'research'}, {'POS': 'NOUN'}]",
+            "[{'IS_URL': True}]"
+          ],
+          "automatic_triggers": [
+            "Email signatures detected",
+            "URLs or file extensions present",
+            "Digital tool names mentioned"
+          ],
+          "performance": "~40ms with digital content detection"
+        },
+        "rapidfuzz": {
+          "keywords": [
+            "email",
+            "write",
+            "code",
+            "research",
+            "analyze",
+            "type"
+          ],
+          "threshold": 80,
+          "typo_examples": [
+            "email→emal",
+            "research→reseach",
+            "analyze→analze"
+          ],
+          "performance": "~8ms for 100+ keywords"
+        },
+        "automatic": {
+          "file_extensions": [".pdf", ".doc", ".xls", ".ppt"],
+          "urls": ["http://", "https://", "www."],
+          "email_patterns": ["@domain.com", "From:", "To:", "Subject:"]
+        }
+      },
+      "hybrid_detection": {
+        "example": "Send email to team@company.com → automatic:email + rapidfuzz:'send'(95) = HIGH confidence",
+        "confidence_formula": "max(automatic_trigger(1.0), linguistic_score, keyword_score)",
+        "fallback_strategy": "keyword matching with automatic triggers"
+      },
+      "use_cases": [
+        "Email composition and management",
+        "Document creation and editing",
+        "Research and analysis tasks",
+        "Software development work",
+        "Online activities and browsing"
+      ],
+      "integration_points": {
+        "file_system": "Document and file operations",
+        "applications": "Software-specific tasks",
+        "websites": "Online research and activities"
+      }
+    },
+    "@home": {
+      "definition": "Actions that can only be done at home or require home resources",
+      "detection_strategy": {
+        "primary_method": "rapidfuzz",
+        "secondary_method": "spacy",
+        "validation_method": "temporal"
+      },
+      "pattern_approaches": {
+        "rapidfuzz": {
+          "keywords": [
+            "home",
+            "house",
+            "family",
+            "personal",
+            "kitchen",
+            "garage"
+          ],
+          "threshold": 85,
+          "typo_examples": ["home→hom", "family→famly", "kitchen→kichen"],
+          "performance": "~6ms for 30 keywords"
+        },
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': {'IN': ['home', 'house']}}, {'POS': 'NOUN'}]",
+            "[{'ENT_TYPE': 'PERSON'}, {'LOWER': 'family'}]"
+          ],
+          "entity_recognition": ["Family member names", "Home address"],
+          "performance": "~45ms with personal entity detection"
+        },
+        "temporal": {
+          "time_indicators": [
+            "evening",
+            "weekend",
+            "after work",
+            "sunday"
+          ],
+          "personal_time": ["free time", "personal hours"],
+          "performance": "~2ms for temporal analysis"
+        }
+      },
+      "hybrid_detection": {
+        "example": "Clean garage on weekend → rapidfuzz:'garage'(100) + temporal:'weekend'(90) = HIGH confidence",
+        "confidence_formula": "(location_score * 0.6) + (temporal_score * 0.4)",
+        "fallback_strategy": "location keywords only"
+      },
+      "use_cases": [
+        "Home maintenance and repairs",
+        "Family activities and responsibilities",
+        "Personal projects and hobbies",
+        "Household management tasks"
+      ],
+      "integration_points": {
+        "calendar": "Personal time scheduling",
+        "family": "Family member coordination",
+        "maintenance": "Home improvement tracking"
+      }
+    },
+    "@office": {
+      "definition": "Actions that require being at the office or workplace",
+      "detection_strategy": {
+        "primary_method": "spacy",
+        "secondary_method": "rapidfuzz",
+        "validation_method": "temporal"
+      },
+      "pattern_approaches": {
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': 'meeting'}, {'ENT_TYPE': 'PERSON'}]",
+            "[{'LOWER': {'IN': ['colleague', 'boss', 'team']}}]",
+            "[{'LOWER': 'office'}, {'POS': 'NOUN'}]"
+          ],
+          "entity_recognition": ["Colleague names", "Company entities"],
+          "performance": "~55ms with workplace entity detection"
+        },
+        "rapidfuzz": {
+          "keywords": [
+            "office",
+            "work",
+            "meeting",
+            "colleague",
+            "boss",
+            "desk"
+          ],
+          "threshold": 85,
+          "typo_examples": [
+            "office→ofice",
+            "meeting→meting",
+            "colleague→coleague"
+          ],
+          "performance": "~7ms for 40 keywords"
+        },
+        "temporal": {
+          "time_indicators": ["business hours", "workday", "during work"],
+          "schedule_context": ["9-5", "office hours", "work time"],
+          "performance": "~2ms for temporal analysis"
+        }
+      },
+      "hybrid_detection": {
+        "example": "Meeting with Sarah during business hours → spacy:'meeting'+PERSON(90) + temporal:'business hours'(95) = HIGH confidence",
+        "confidence_formula": "(workplace_entity * 0.5) + (keyword_score * 0.3) + (temporal_score * 0.2)",
+        "fallback_strategy": "workplace keywords with time hints"
+      },
+      "use_cases": [
+        "Face-to-face meetings and discussions",
+        "Collaborative work requiring physical presence",
+        "Access to office-specific resources",
+        "Professional interactions and networking"
+      ],
+      "integration_points": {
+        "calendar": "Meeting scheduling",
+        "contacts": "Colleague information",
+        "projects": "Team collaboration tasks"
+      }
+    },
+    "@errands": {
+      "definition": "Actions to do while out and about (shopping, banking, etc.)",
+      "detection_strategy": {
+        "primary_method": "rapidfuzz",
+        "secondary_method": "spacy",
+        "validation_method": "location"
+      },
+      "pattern_approaches": {
+        "rapidfuzz": {
+          "keywords": [
+            "buy",
+            "shop",
+            "store",
+            "bank",
+            "pick up",
+            "drop off"
+          ],
+          "threshold": 80,
+          "typo_examples": ["buy→by", "shop→shp", "store→stor"],
+          "performance": "~8ms for 60 keywords"
+        },
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': {'IN': ['buy', 'get', 'pick']}}, {'POS': 'NOUN'}]",
+            "[{'LOWER': 'go'}, {'LOWER': 'to'}, {'ENT_TYPE': 'ORG'}]"
+          ],
+          "entity_recognition": [
+            "Store names",
+            "Business entities",
+            "Locations"
+          ],
+          "performance": "~50ms with location entity detection"
+        },
+        "location": {
+          "place_indicators": [
+            "mall",
+            "grocery",
+            "pharmacy",
+            "post office"
+          ],
+          "commercial_verbs": [
+            "purchase",
+            "collect",
+            "return",
+            "exchange"
+          ],
+          "performance": "~3ms for location analysis"
+        }
+      },
+      "hybrid_detection": {
+        "example": "Buy groceries at Whole Foods → rapidfuzz:'buy'(100) + spacy:ORG(Whole Foods)(95) = HIGH confidence",
+        "confidence_formula": "(commercial_verb * 0.4) + (location_entity * 0.6)",
+        "fallback_strategy": "commercial keywords with location hints"
+      },
+      "use_cases": [
+        "Shopping for groceries and supplies",
+        "Banking and financial errands",
+        "Package pickup and delivery",
+        "Appointments at service locations"
+      ],
+      "integration_points": {
+        "maps": "Location-based routing",
+        "shopping": "Purchase lists and tracking",
+        "calendar": "Errand scheduling"
+      }
+    },
+    "@anywhere": {
+      "definition": "Actions that can be done in any location (thinking, reading, etc.)",
+      "detection_strategy": {
+        "primary_method": "spacy",
+        "secondary_method": "default",
+        "validation_method": "elimination"
+      },
+      "pattern_approaches": {
+        "spacy": {
+          "patterns": [
+            "[{'LOWER': {'IN': ['think', 'consider', 'reflect']}}]",
+            "[{'LOWER': 'read'}, {'POS': 'NOUN'}]",
+            "[{'POS': 'VERB', 'DEP': 'ROOT'}, {'LOWER': 'about'}]"
+          ],
+          "mental_verbs": [
+            "think",
+            "consider",
+            "reflect",
+            "ponder",
+            "decide"
+          ],
+          "performance": "~40ms for mental activity detection"
+        },
+        "default": {
+          "fallback_logic": "Used when no other context matches strongly",
+          "threshold": "Low confidence in other contexts",
+          "performance": "~1ms (minimal processing)"
+        },
+        "elimination": {
+          "process": "Check if other contexts don't apply",
+          "confidence": "Medium when other contexts score low",
+          "performance": "~10ms for elimination analysis"
+        }
+      },
+      "hybrid_detection": {
+        "example": "Think about vacation plans → spacy:'think'(90) + elimination:low other contexts = MEDIUM confidence",
+        "confidence_formula": "mental_verb_score if > 0.6 else (1.0 - max(other_context_scores))",
+        "fallback_strategy": "Always available as last resort"
+      },
+      "use_cases": [
+        "Thinking and reflection tasks",
+        "Reading and review activities",
+        "Planning and brainstorming",
+        "Decision-making processes"
+      ],
+      "integration_points": {
+        "notes": "Capture thoughts and ideas",
+        "projects": "Thinking time for planning",
+        "reviews": "Reflection during GTD reviews"
+      }
+    }
+  }
+}

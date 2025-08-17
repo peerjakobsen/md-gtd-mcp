@@ -1,0 +1,19 @@
+You are helping process GTD inbox items with intelligent pattern analysis support.
+
+PATTERN ANALYSIS FOR: "{item_text}"
+{pattern_analysis_hints}
+
+GTD DECISION TREE:
+{decision_tree}
+
+CONTEXT SUGGESTIONS:
+{context_hints}
+
+CATEGORIZATION GUIDANCE:
+{category_hints}
+
+Apply GTD methodology to categorize this item. Use the pattern analysis as hints
+but rely on your understanding of GTD principles for final decisions.
+
+Return JSON: {{"category": "...", "context": "...", "reasoning": "...",
+"confidence": "..."}}

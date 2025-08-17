@@ -72,7 +72,7 @@
     - GTDPatternAnalyzer class with configurable thresholds
     - Pattern priority system: priority > project > delegation > two-minute
     - Confidence scoring based on pattern strength and fuzzy match scores
-- [ ] 2.7 Create GTD methodology documentation and constants
+- [x] 2.7 Create GTD methodology documentation and constants
   - Document GTD decision tree logic for prompts
     - Include decision flowchart with pattern matching integration points
     - Document when to use spacy vs rapidfuzz vs textstat for each decision node
@@ -120,41 +120,41 @@
     - Validate memory usage stays within acceptable bounds for MCP server
 
 ### 3. Create core MCP prompts (Claude Desktop intelligence)
-**Note: These prompts use static rules from Task 2 to guide Claude Desktop's LLM reasoning**
+**Note: These prompts use rules from Task 2 to guide Claude Desktop's LLM reasoning**
 
 - [ ] 3.1 Write tests for inbox_clarification prompt generation
   - Test prompt includes GTD decision tree from rule engine
-  - Test clarifying questions integration from static rules
+  - Test clarifying questions integration from rules
   - Test context pattern hints inclusion
   - Test project indicator guidance
 - [ ] 3.2 Implement inbox_clarification prompt with GTD template
   - Include GTD methodology questions from rule engine
-  - Add decision tree text from static rules
+  - Add decision tree text from rules
   - Include context keyword hints for Claude's reasoning
   - Reference project indicators for multi-step detection
   - Guide Claude through confidence assessment
 - [ ] 3.3 Write tests for quick_categorize prompt
   - Test streamlined decision process
-  - Test integration with static rule patterns
+  - Test integration with rule patterns
   - Test fallback to full clarification when needed
 - [ ] 3.4 Implement quick_categorize for simple items
   - Lightweight prompt for obvious categorizations
-  - Use subset of static patterns for speed
+  - Use subset of  patterns for speed
   - Include escalation logic for complex items
 - [ ] 3.5 Write tests for batch_process_inbox prompt
-  - Test batch consistency using same static rules
+  - Test batch consistency using same rules
   - Test grouping logic guidance for Claude
   - Test processing up to 20 items efficiently
 - [ ] 3.6 Implement batch_process_inbox with grouping logic
   - Guide Claude to identify similar patterns
-  - Use static indicators for grouping suggestions
+  - Use indicators for grouping suggestions
   - Maintain categorization consistency across batch
 - [ ] 3.7 Test prompt response formatting and JSON structure
   - Validate schema compliance with existing Pydantic models
   - Test error handling for malformed Claude responses
   - Test response parsing and validation
 - [ ] 3.8 Verify all prompt tests pass
-  - Integration tests with static rule engine
+  - Integration tests with rule engine
   - End-to-end prompt generation and validation
   - Performance testing for prompt token efficiency
 

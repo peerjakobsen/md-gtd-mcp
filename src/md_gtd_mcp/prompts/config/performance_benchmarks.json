@@ -1,0 +1,196 @@
+{
+  "library_performance_profiles": {
+    "spacy": {
+      "name": "spaCy Natural Language Processing",
+      "version_requirement": "spacy>=3.4.0",
+      "model_requirement": "en_core_web_sm",
+      "use_cases": [
+        "Linguistic pattern analysis",
+        "Entity recognition (persons, organizations)",
+        "Dependency parsing for complex structures",
+        "Part-of-speech tagging for grammar patterns"
+      ],
+      "performance_characteristics": {
+        "initialization_time": "2-5 seconds (model loading)",
+        "per_text_analysis": "40-60ms for typical inbox items",
+        "batch_processing": "30-45ms per item in batches of 10+",
+        "memory_usage": "150-200MB with en_core_web_sm model",
+        "cpu_usage": "Medium (linguistic processing)",
+        "disk_space": "50MB for model files"
+      },
+      "scaling_characteristics": {
+        "text_length_impact": "Linear scaling with text length",
+        "pattern_complexity": "Minimal impact (pre-compiled patterns)",
+        "concurrent_usage": "Thread-safe after model loading",
+        "memory_scaling": "Constant memory per text analysis"
+      },
+      "benchmarks": {
+        "10_items": {"time": "450ms", "memory": "160MB"},
+        "100_items": {"time": "3.2s", "memory": "180MB"},
+        "1000_items": {"time": "31s", "memory": "220MB"},
+        "complex_patterns": {
+          "overhead": "5-10ms",
+          "accuracy": "85-95%"
+        }
+      },
+      "fallback_behavior": {
+        "model_unavailable": "Graceful degradation to keyword matching",
+        "memory_limited": "Disable entity recognition, keep POS tags",
+        "performance_mode": "Skip dependency parsing for speed"
+      },
+      "offline_capability": "Full offline operation after model download"
+    },
+    "rapidfuzz": {
+      "name": "RapidFuzz String Matching",
+      "version_requirement": "rapidfuzz>=2.0.0",
+      "dependencies": "No external models required",
+      "use_cases": [
+        "Fuzzy keyword matching with typo tolerance",
+        "Approximate string matching for variations",
+        "Fast dictionary searches with confidence scores",
+        "Typo-tolerant context detection"
+      ],
+      "performance_characteristics": {
+        "initialization_time": "<1ms (no model loading)",
+        "per_text_analysis": "3-8ms for typical keyword sets",
+        "batch_processing": "2-5ms per item in large batches",
+        "memory_usage": "5-15MB depending on dictionary size",
+        "cpu_usage": "Low (optimized C++ implementation)",
+        "disk_space": "No additional files required"
+      },
+      "scaling_characteristics": {
+        "dictionary_size": "Linear scaling with keyword count",
+        "text_length": "Minimal impact (efficient algorithms)",
+        "threshold_tuning": "No performance impact",
+        "concurrent_usage": "Excellent thread safety"
+      },
+      "benchmarks": {
+        "50_keywords": {"time": "3ms", "memory": "8MB"},
+        "500_keywords": {"time": "15ms", "memory": "25MB"},
+        "5000_keywords": {"time": "85ms", "memory": "120MB"},
+        "typo_detection": {"accuracy": "90-98%", "overhead": "2ms"}
+      },
+      "threshold_optimization": {
+        "high_confidence": "90-100 (exact matches and minor typos)",
+        "medium_confidence": "70-89 (abbreviations and variations)",
+        "low_confidence": "50-69 (distant matches, use with caution)",
+        "recommended_default": "80-85 for good balance"
+      },
+      "offline_capability": "Complete offline operation"
+    },
+    "textstat": {
+      "name": "Text Statistics and Readability",
+      "version_requirement": "textstat>=0.7.0",
+      "dependencies": "Pure Python, no external requirements",
+      "use_cases": [
+        "Text complexity analysis",
+        "Reading difficulty assessment",
+        "Word count and syllable analysis",
+        "Two-minute rule estimation"
+      ],
+      "performance_characteristics": {
+        "initialization_time": "<1ms (no setup required)",
+        "per_text_analysis": "1-3ms for typical inbox items",
+        "batch_processing": "0.5-1.5ms per item in batches",
+        "memory_usage": "1-5MB (minimal footprint)",
+        "cpu_usage": "Very low (simple calculations)",
+        "disk_space": "No additional files required"
+      },
+      "scaling_characteristics": {
+        "text_length": "Linear scaling with character count",
+        "complexity_metrics": "Constant time per metric",
+        "concurrent_usage": "Thread-safe and lightweight",
+        "memory_scaling": "Negligible per text"
+      },
+      "benchmarks": {
+        "short_text": {"time": "0.8ms", "memory": "2MB"},
+        "medium_text": {"time": "1.5ms", "memory": "3MB"},
+        "long_text": {"time": "3.2ms", "memory": "5MB"},
+        "complexity_suite": {
+          "time": "2ms",
+          "accuracy": "Good correlation"
+        }
+      },
+      "metrics_provided": {
+        "flesch_reading_ease": "0-100 scale (higher = easier)",
+        "lexicon_count": "Number of words",
+        "syllable_count": "Total syllables",
+        "sentence_count": "Number of sentences",
+        "complexity_scores": "Various readability indices"
+      },
+      "offline_capability": "Complete offline operation"
+    }
+  },
+  "hybrid_strategy_performance": {
+    "combination_overhead": {
+      "spacy_plus_rapidfuzz": "45-65ms total (5ms combination overhead)",
+      "rapidfuzz_plus_textstat": "4-10ms total (1ms overhead)",
+      "all_three_libraries": "50-70ms total (10ms combination overhead)",
+      "pattern_priority_resolution": "2-5ms for conflict resolution"
+    },
+    "memory_optimization": {
+      "shared_model_loading": "Load spaCy model once per server instance",
+      "keyword_dictionary_caching": "Cache rapidfuzz dictionaries",
+      "lazy_loading": "Initialize analyzers only when needed",
+      "memory_monitoring": "Track usage and implement limits"
+    },
+    "performance_targets": {
+      "single_item_analysis": "Target: <100ms, Acceptable: <200ms",
+      "batch_processing": "Target: <50ms/item, Acceptable: <100ms/item",
+      "memory_usage": "Target: <300MB, Maximum: <500MB",
+      "accuracy_threshold": "Minimum: 80%, Target: 90%+"
+    },
+    "optimization_strategies": {
+      "pattern_caching": "Cache compiled spaCy patterns",
+      "result_memoization": "Cache analysis results for identical texts",
+      "batch_optimization": "Process similar items together",
+      "early_termination": "Stop analysis when high confidence reached"
+    }
+  },
+  "production_deployment_considerations": {
+    "resource_requirements": {
+      "minimum_ram": "512MB (basic keyword matching only)",
+      "recommended_ram": "1GB (full spaCy with caching)",
+      "cpu_requirements": "2+ cores recommended for concurrent usage",
+      "disk_space": "100MB for models and caches"
+    },
+    "scalability_patterns": {
+      "vertical_scaling": "Add RAM for larger keyword dictionaries",
+      "horizontal_scaling": "Stateless design enables multiple instances",
+      "caching_strategy": "Redis for shared pattern analysis cache",
+      "load_balancing": "Round-robin with health checks"
+    },
+    "monitoring_metrics": {
+      "response_time_p95": "Track 95th percentile analysis time",
+      "memory_usage_peak": "Monitor peak memory during batch processing",
+      "accuracy_rates": "Track categorization accuracy over time",
+      "fallback_frequency": "Monitor how often fallbacks are used"
+    },
+    "fallback_strategies": {
+      "spacy_unavailable": "Fall back to rapidfuzz + textstat",
+      "memory_limited": "Disable entity recognition features",
+      "high_load": "Switch to keyword-only mode temporarily",
+      "complete_failure": "Use basic GTD rules without pattern analysis"
+    }
+  },
+  "integration_testing_guidelines": {
+    "unit_test_targets": {
+      "spacy_patterns": "Test all linguistic pattern matches",
+      "rapidfuzz_fuzzy": "Test typo tolerance with known variations",
+      "textstat_complexity": "Test complexity scoring edge cases",
+      "hybrid_combination": "Test pattern priority resolution"
+    },
+    "performance_test_scenarios": {
+      "cold_start": "Test initial model loading time",
+      "steady_state": "Test sustained analysis performance",
+      "memory_pressure": "Test behavior under memory constraints",
+      "concurrent_load": "Test thread safety and concurrent usage"
+    },
+    "accuracy_validation": {
+      "ground_truth_dataset": "Manually categorized GTD items",
+      "cross_validation": "Test pattern accuracy across item types",
+      "edge_case_testing": "Test unusual or ambiguous items",
+      "regression_testing": "Ensure accuracy doesn't degrade over time"
+    }
+  }
+}

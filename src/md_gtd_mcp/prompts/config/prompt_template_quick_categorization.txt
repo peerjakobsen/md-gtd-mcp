@@ -1,0 +1,8 @@
+Quick GTD categorization for: "{item_text}"
+
+Pattern hints: {compressed_analysis}
+
+Categories: next-action|project|waiting-for|someday-maybe|reference|trash
+Contexts: @calls|@computer|@home|@office|@errands|@anywhere
+
+Return: {{"category": "...", "confidence": "high|medium|low"}}

@@ -1,0 +1,12 @@
+Batch GTD processing with pattern-based grouping suggestions:
+
+ITEMS TO PROCESS:
+{items_with_pattern_hints}
+
+GROUPING SUGGESTIONS:
+{pattern_based_groupings}
+
+Process each item following GTD methodology. Use pattern analysis for efficiency
+but ensure proper GTD categorization logic.
+
+Return: {{"categorizations": [...], "groups": [...]}}

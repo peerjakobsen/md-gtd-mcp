@@ -1,0 +1,40 @@
+{
+  "clarifying_questions": [
+    "What is this item about?",
+    "Is this actionable? (Can you visualize yourself doing something about it?)",
+    "If actionable: What's the successful outcome or purpose?",
+    "If actionable: What's the very next physical action required?",
+    "What context or tool is needed for this action?",
+    "How much time will this action take?",
+    "What energy level is required?",
+    "Am I the right person to do this, or should it be delegated?",
+    "If not actionable: Is this reference material, someday/maybe, or trash?",
+    "Does this relate to any existing projects or areas of focus?"
+  ],
+  "category_descriptions": {
+    "next-action": "A single, specific physical action that can be completed in one session. Must be concrete and doable.",
+    "project": "A desired outcome requiring multiple actions. Has a clear definition of 'done' and needs planning.",
+    "waiting-for": "Actions delegated to others or pending external factors. Track what you're waiting to receive.",
+    "someday-maybe": "Things you might want to do someday but are not committed to right now. Future possibilities.",
+    "reference": "Information that might be useful later but requires no action. Keep for potential future reference.",
+    "trash": "Items with no value that can be discarded. Neither actionable nor worth keeping as reference."
+  },
+  "context_definitions": {
+    "@home": "Actions that can only be done at home or require home resources",
+    "@computer": "Actions requiring a computer, internet, or digital tools",
+    "@calls": "Actions requiring phone calls or voice conversations",
+    "@phone": "Actions that can be done on a mobile phone (calls, texts, mobile apps)",
+    "@errands": "Actions to do while out and about (shopping, banking, etc.)",
+    "@office": "Actions that require being at the office or workplace",
+    "@agenda": "Items to discuss with specific people during meetings",
+    "@waiting": "Items delegated to others or waiting on external factors",
+    "@anywhere": "Actions that can be done in any location (thinking, reading, etc.)"
+  },
+  "gtd_phases": {
+    "capture": "Collect and gather all inputs and commitments in trusted external systems",
+    "clarify": "Process captured items to determine what they mean and what action is required",
+    "organize": "Sort and categorize clarified items into appropriate lists and folders",
+    "reflect": "Review your system regularly to maintain perspective and make choices",
+    "engage": "Make choices about actions to take based on context, time, and energy"
+  }
+}

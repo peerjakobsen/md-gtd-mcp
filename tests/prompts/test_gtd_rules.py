@@ -1,9 +1,13 @@
 """Tests for GTD static rule engine and methodology constants."""
 
+import pytest
+
 from md_gtd_mcp.prompts.gtd_rules import (
     GTDDecisionTree,
+    GTDDocumentation,
     GTDMethodology,
     GTDPatterns,
+    GTDPromptBuilder,
     GTDRuleEngine,
 )
 
@@ -232,11 +236,13 @@ class TestGTDPatterns:
 class TestGTDRuleEngine:
     """Test GTD rule engine functions and utilities."""
 
+    @pytest.mark.slow
     def test_rule_engine_initialization(self) -> None:
         """Test that rule engine can be initialized."""
         engine = GTDRuleEngine()
         assert engine is not None
 
+    @pytest.mark.slow
     def test_get_context_patterns(self) -> None:
         """Test getting context patterns from rule engine."""
         engine = GTDRuleEngine()
@@ -247,6 +253,7 @@ class TestGTDRuleEngine:
         assert "@computer" in patterns
         assert len(patterns) > 0
 
+    @pytest.mark.slow
     def test_get_clarifying_questions(self) -> None:
         """Test getting clarifying questions from rule engine."""
         engine = GTDRuleEngine()
@@ -333,6 +340,7 @@ class TestGTDRuleEngine:
                 f"Context {context} should be invalid"
             )
 
+    @pytest.mark.slow
     def test_suggest_contexts_for_text(self) -> None:
         """Test context suggestion based on text content."""
         engine = GTDRuleEngine()
@@ -384,6 +392,7 @@ class TestKeywordPatternMatching:
                     f"Keyword '{keyword}' should be lowercase"
                 )
 
+    @pytest.mark.slow
     def test_pattern_lookup_functions_basic(self) -> None:
         """Test basic pattern lookup functions (string-in-list operations)."""
         engine = GTDRuleEngine()
@@ -402,6 +411,7 @@ class TestKeywordPatternMatching:
             for expected in expected_contexts:
                 assert expected in suggested, f"Text '{text}' should suggest {expected}"
 
+    @pytest.mark.slow
     def test_multiple_pattern_matching_overlapping_contexts(self) -> None:
         """Test multiple pattern matching for overlapping contexts."""
         engine = GTDRuleEngine()
@@ -537,3 +547,498 @@ class TestKeywordPatternMatching:
                 assert item.startswith("@"), (
                     f"All contexts should start with @ for '{text}'"
                 )
+
+
+class TestGTDDocumentation:
+    """Test GTD methodology documentation with pattern matching integration."""
+
+    def test_decision_tree_with_pattern_integration(self) -> None:
+        """Test decision tree includes pattern matching integration points."""
+        decision_tree = GTDDocumentation.get_decision_tree_with_pattern_integration()
+
+        # Verify core GTD decision nodes are present
+        assert "ACTIONABILITY ASSESSMENT" in decision_tree
+        assert "OUTCOME ASSESSMENT" in decision_tree
+        assert "TIME ASSESSMENT" in decision_tree
+        assert "RESPONSIBILITY ASSESSMENT" in decision_tree
+        assert "CONTEXT ASSIGNMENT" in decision_tree
+
+        # Verify pattern matching integration points
+        assert "spaCy" in decision_tree
+        assert "rapidfuzz" in decision_tree
+        assert "textstat" in decision_tree
+
+        # Verify library-specific usage guidance
+        assert "threshold:" in decision_tree.lower()
+        assert "linguistic analysis" in decision_tree.lower()
+        assert "fuzzy matching" in decision_tree.lower()
+
+        # Verify performance characteristics mentioned
+        assert "performance" in decision_tree.lower()
+        assert "offline" in decision_tree.lower()
+
+    def test_category_descriptions_with_thresholds(self) -> None:
+        """Test category descriptions include pattern matching thresholds."""
+        categories = GTDDocumentation.get_category_descriptions_with_thresholds()
+
+        # Verify all GTD categories are present
+        expected_categories = {
+            "next-action",
+            "project",
+            "waiting-for",
+            "someday-maybe",
+            "reference",
+            "trash",
+        }
+        assert set(categories.keys()) == expected_categories
+
+        # Test next-action category structure
+        next_action = categories["next-action"]
+        assert "description" in next_action
+        assert "pattern_matching" in next_action
+        assert "confidence_thresholds" in next_action
+        assert "context_assignment" in next_action
+        assert "validation_rules" in next_action
+        assert "common_patterns" in next_action
+
+        # Test confidence thresholds structure
+        thresholds = next_action["confidence_thresholds"]
+        assert "spacy_linguistic" in thresholds
+        assert "rapidfuzz_fuzzy" in thresholds
+        assert "textstat_complexity" in thresholds
+        assert "combined_minimum" in thresholds
+
+        # Verify threshold values are reasonable
+        assert 0.0 <= thresholds["spacy_linguistic"] <= 1.0
+        assert 0.0 <= thresholds["rapidfuzz_fuzzy"] <= 1.0
+        assert 0.0 <= thresholds["combined_minimum"] <= 1.0
+
+    def test_context_pattern_strategies(self) -> None:
+        """Test context definitions mapped to pattern detection strategies."""
+        contexts = GTDDocumentation.get_context_pattern_strategies()
+
+        # Verify all standard GTD contexts are present
+        expected_contexts = {
+            "@calls",
+            "@computer",
+            "@home",
+            "@office",
+            "@errands",
+            "@anywhere",
+        }
+        assert set(contexts.keys()) == expected_contexts
+
+        # Test @calls context structure
+        calls_context = contexts["@calls"]
+        assert "definition" in calls_context
+        assert "detection_strategy" in calls_context
+        assert "pattern_approaches" in calls_context
+        assert "hybrid_detection" in calls_context
+        assert "use_cases" in calls_context
+
+        # Test detection strategy structure
+        strategy = calls_context["detection_strategy"]
+        assert "primary_method" in strategy
+        assert "secondary_method" in strategy
+        assert "validation_method" in strategy
+
+        # Test pattern approaches include all three libraries
+        approaches = calls_context["pattern_approaches"]
+        assert "rapidfuzz" in approaches
+        assert "spacy" in approaches
+        assert (
+            "textstat" in approaches
+            or "automatic" in approaches
+            or "temporal" in approaches
+        )
+
+        # Test performance data is included
+        for approach_data in approaches.values():
+            assert "performance" in approach_data
+
+    def test_prompt_template_utilities(self) -> None:
+        """Test prompt template building utilities structure."""
+        utilities = GTDDocumentation.get_prompt_template_utilities()
+
+        # Verify main utility categories
+        assert "pattern_to_prompt_converters" in utilities
+        assert "prompt_optimization_strategies" in utilities
+        assert "claude_guidance_integration" in utilities
+        assert "prompt_template_examples" in utilities
+
+        # Test converter structure
+        converters = utilities["pattern_to_prompt_converters"]
+        assert "context_hints" in converters
+        assert "category_hints" in converters
+        assert "complexity_hints" in converters
+
+        # Test optimization strategies
+        optimization = utilities["prompt_optimization_strategies"]
+        assert "token_efficiency" in optimization
+        assert "context_window_optimization" in optimization
+        assert "dynamic_prompt_adaptation" in optimization
+
+        # Verify token limits are reasonable
+        assert optimization["token_efficiency"]["max_tokens_per_analysis"] > 0
+        assert (
+            optimization["context_window_optimization"]["claude_context_limit"] > 1000
+        )
+
+    def test_performance_benchmarks(self) -> None:
+        """Test performance benchmarks documentation structure."""
+        benchmarks = GTDDocumentation.get_performance_benchmarks()
+
+        # Verify main benchmark categories
+        assert "library_performance_profiles" in benchmarks
+        assert "hybrid_strategy_performance" in benchmarks
+        assert "production_deployment_considerations" in benchmarks
+        assert "integration_testing_guidelines" in benchmarks
+
+        # Test library profiles
+        profiles = benchmarks["library_performance_profiles"]
+        assert "spacy" in profiles
+        assert "rapidfuzz" in profiles
+        assert "textstat" in profiles
+
+        # Test spaCy profile structure
+        spacy_profile = profiles["spacy"]
+        assert "performance_characteristics" in spacy_profile
+        assert "scaling_characteristics" in spacy_profile
+        assert "benchmarks" in spacy_profile
+        assert "offline_capability" in spacy_profile
+
+        # Verify offline capability is documented
+        assert spacy_profile["offline_capability"] is not None
+        assert profiles["rapidfuzz"]["offline_capability"] is not None
+        assert profiles["textstat"]["offline_capability"] is not None
+
+    @pytest.mark.slow
+    def test_complete_documentation_generation(self) -> None:
+        """Test complete documentation generation."""
+        doc = GTDDocumentation.generate_complete_documentation()
+
+        # Verify document structure
+        assert "# GTD Methodology Documentation" in doc
+        assert "## Table of Contents" in doc
+        assert "## GTD Decision Tree" in doc
+        assert "## Category Descriptions" in doc
+        assert "## Context Pattern Detection" in doc
+        assert "## Performance Benchmarks" in doc
+        assert "## Conclusion" in doc
+
+        # Verify all categories are documented
+        for category in [
+            "next-action",
+            "project",
+            "waiting-for",
+            "someday-maybe",
+            "reference",
+            "trash",
+        ]:
+            assert category in doc
+
+        # Verify all contexts are documented
+        for context in [
+            "@calls",
+            "@computer",
+            "@home",
+            "@office",
+            "@errands",
+            "@anywhere",
+        ]:
+            assert context in doc
+
+        # Verify performance data is included
+        assert "spaCy Performance:" in doc
+        assert "rapidfuzz Performance:" in doc
+        assert "textstat Performance:" in doc
+
+        # Verify implementation guidelines are present
+        assert "Implementation Guidelines" in doc
+        assert "For MCP Prompt Developers" in doc
+        assert "For System Administrators" in doc
+
+
+class TestGTDPromptBuilder:
+    """Test GTD prompt builder for MCP prompt generation."""
+
+    @pytest.fixture(scope="session")
+    def rule_engine(self) -> GTDRuleEngine:
+        """Create GTD rule engine for testing (shared across all tests)."""
+        return GTDRuleEngine()
+
+    @pytest.fixture(scope="session")
+    def prompt_builder(self, rule_engine: GTDRuleEngine) -> GTDPromptBuilder:
+        """Create prompt builder for testing (shared across all tests)."""
+        return GTDPromptBuilder(rule_engine)
+
+    def test_prompt_builder_initialization(self, rule_engine: GTDRuleEngine) -> None:
+        """Test prompt builder initialization."""
+        builder = GTDPromptBuilder(rule_engine)
+
+        assert builder.rule_engine == rule_engine
+        assert builder.max_tokens_per_analysis == 200
+        assert builder.max_contexts == 3
+        assert builder.max_explanations == 2
+
+    def test_convert_context_analysis_to_prompt_hints(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test context analysis conversion to prompt hints."""
+        # Test with call-related text
+        call_text = "Call John about the project meeting"
+        hint = prompt_builder.convert_context_analysis_to_prompt_hints(call_text)
+
+        assert "Context Analysis:" in hint
+        assert len(hint) <= 150  # Default max length
+
+        # Test with empty text
+        empty_hint = prompt_builder.convert_context_analysis_to_prompt_hints("")
+        assert "No clear context indicators" in empty_hint
+
+    def test_convert_categorization_analysis_to_prompt_guidance(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test categorization analysis conversion to guidance."""
+        # Test with project-like text
+        project_text = (
+            "Implement new customer management system with reporting features"
+        )
+        guidance = prompt_builder.convert_categorization_analysis_to_prompt_guidance(
+            project_text
+        )
+
+        assert "Category Analysis:" in guidance
+        assert "Recommended" in guidance
+        assert "confidence" in guidance
+        assert len(guidance) <= 200  # Default max length
+
+    def test_convert_complexity_analysis_to_prompt_context(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test complexity analysis conversion to context."""
+        # Test with quick task
+        quick_text = "Quick call to confirm meeting time"
+        context = prompt_builder.convert_complexity_analysis_to_prompt_context(
+            quick_text
+        )
+
+        assert "Complexity Analysis:" in context
+        assert "Quick task:" in context
+        assert "Project complexity:" in context
+        assert "Delegation:" in context
+
+    def test_build_quick_categorization_prompt(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test quick categorization prompt building."""
+        text = "Send email to team about deadline"
+        prompt = prompt_builder.build_quick_categorization_prompt(text)
+
+        # Verify prompt structure
+        assert f'"{text}"' in prompt
+        assert "Quick GTD categorization" in prompt
+        assert "Context Analysis:" in prompt
+        assert "Category Analysis:" in prompt
+        assert "Categories:" in prompt
+        assert "Contexts:" in prompt
+        assert "Return JSON:" in prompt
+
+        # Verify all GTD categories are listed
+        assert "next-action" in prompt
+        assert "project" in prompt
+        assert "waiting-for" in prompt
+
+        # Verify all standard contexts are listed
+        assert "@calls" in prompt
+        assert "@computer" in prompt
+        assert "@home" in prompt
+
+    @pytest.mark.slow
+    def test_build_comprehensive_analysis_prompt(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test comprehensive analysis prompt building."""
+        text = "Develop comprehensive training program for new employees"
+        prompt = prompt_builder.build_comprehensive_analysis_prompt(text)
+
+        # Verify prompt structure
+        assert f'"{text}"' in prompt
+        assert "Comprehensive GTD analysis" in prompt
+        assert "PATTERN ANALYSIS:" in prompt
+        assert "GTD CLARIFYING QUESTIONS:" in prompt
+        assert "GTD DECISION TREE:" in prompt
+        assert "Return detailed JSON:" in prompt
+
+        # Verify GTD methodology elements
+        assert "actionable" in prompt.lower()
+        assert "successful outcome" in prompt.lower()
+        assert "next physical action" in prompt.lower()
+        assert "context" in prompt.lower()
+
+        # Verify JSON structure requirements
+        assert '"actionable": true/false' in prompt
+        assert '"category":' in prompt
+        assert '"reasoning":' in prompt
+
+    def test_build_batch_processing_prompt(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test batch processing prompt building."""
+        items = [
+            "Call supplier about delivery",
+            "Update website pricing page",
+            "Schedule team meeting for Friday",
+            "Review quarterly sales report",
+        ]
+        prompt = prompt_builder.build_batch_processing_prompt(items)
+
+        # Verify prompt structure
+        assert f"Batch GTD processing for {len(items)} inbox items" in prompt
+        assert "ITEMS TO PROCESS:" in prompt
+        assert "GTD BATCH PROCESSING GUIDELINES:" in prompt
+        assert "Return JSON:" in prompt
+
+        # Verify all items are included
+        for i, item in enumerate(items):
+            assert f"{i + 1}. {item}" in prompt
+
+        # Verify batch processing guidance
+        assert "consistent categorization" in prompt.lower()
+        assert "group related items" in prompt.lower()
+        assert "patterns" in prompt.lower()
+
+    @pytest.mark.slow
+    def test_build_batch_processing_with_grouping_hints(
+        self, prompt_builder: GTDPromptBuilder
+    ) -> None:
+        """Test batch processing with grouping suggestions."""
+        items = [
+            "Implement user authentication system",
+            "Create database schema for users",
+            "Design login interface",
+            "Buy groceries for dinner",
+        ]
+        prompt = prompt_builder.build_batch_processing_prompt(
+            items, include_grouping=True
+        )
+
+        # Should include grouping hints for project-related items
+        assert "GROUPING HINTS:" in prompt
+
+        # Test without grouping
+        prompt_no_grouping = prompt_builder.build_batch_processing_prompt(
+            items, include_grouping=False
+        )
+        assert "GROUPING HINTS:" not in prompt_no_grouping
+
+    def test_estimate_prompt_tokens(self, prompt_builder: GTDPromptBuilder) -> None:
+        """Test prompt token estimation."""
+        short_prompt = "Quick test"
+        long_prompt = "This is a much longer prompt that should have more tokens " * 10
+
+        short_tokens = prompt_builder.estimate_prompt_tokens(short_prompt)
+        long_tokens = prompt_builder.estimate_prompt_tokens(long_prompt)
+
+        assert short_tokens > 0
+        assert long_tokens > short_tokens
+        assert short_tokens < 10  # Should be very few tokens
+        assert long_tokens > 50  # Should be many more tokens
+
+    def test_optimize_prompt_for_tokens(self, prompt_builder: GTDPromptBuilder) -> None:
+        """Test prompt token optimization."""
+        long_prompt = "GTD Analysis: " + "This is repeated content. " * 100
+
+        # Test optimization to smaller limit
+        optimized = prompt_builder.optimize_prompt_for_tokens(
+            long_prompt, max_tokens=50
+        )
+
+        assert len(optimized) < len(long_prompt)
+        assert prompt_builder.estimate_prompt_tokens(optimized) <= 55  # 10% buffer
+
+        # Should preserve important content
+        assert "GTD" in optimized
+
+        # Test when no optimization needed
+        short_prompt = "Short GTD prompt"
+        unchanged = prompt_builder.optimize_prompt_for_tokens(
+            short_prompt, max_tokens=1000
+        )
+        assert unchanged == short_prompt
+
+    @pytest.mark.slow
+    def test_rule_engine_integration_methods(self, rule_engine: GTDRuleEngine) -> None:
+        """Test GTDRuleEngine integration with documentation and prompt builder."""
+        # Test documentation access
+        documentation = rule_engine.get_documentation()
+        assert isinstance(documentation, GTDDocumentation)
+
+        # Test prompt builder access
+        prompt_builder = rule_engine.get_prompt_builder()
+        assert isinstance(prompt_builder, GTDPromptBuilder)
+        assert prompt_builder.rule_engine == rule_engine
+
+        # Test enhanced documentation context
+        enhanced_context = rule_engine.get_enhanced_documentation_context()
+        assert "enhanced_decision_tree" in enhanced_context
+        assert "category_descriptions_with_thresholds" in enhanced_context
+        assert "context_pattern_strategies" in enhanced_context
+        assert "complete_documentation" in enhanced_context
+
+        # Test MCP prompt building
+        quick_prompt = rule_engine.build_mcp_prompt_with_patterns(
+            "quick", "Call dentist"
+        )
+        assert "Quick GTD categorization" in quick_prompt
+
+        comprehensive_prompt = rule_engine.build_mcp_prompt_with_patterns(
+            "comprehensive", "Implement new system"
+        )
+        assert "Comprehensive GTD analysis" in comprehensive_prompt
+
+        batch_prompt = rule_engine.build_mcp_prompt_with_patterns(
+            "batch", items=["Task 1", "Task 2"]
+        )
+        assert "Batch GTD processing" in batch_prompt
+
+    @pytest.mark.slow
+    def test_pattern_integration_summary(self, rule_engine: GTDRuleEngine) -> None:
+        """Test pattern integration capabilities summary."""
+        summary = rule_engine.get_pattern_integration_summary()
+
+        # Verify summary structure
+        assert "pattern_matching_available" in summary
+        assert "documentation_components" in summary
+        assert "prompt_building_capabilities" in summary
+        assert "performance_targets" in summary
+
+        # Test pattern matching availability flags
+        pattern_availability = summary["pattern_matching_available"]
+        assert "advanced_matcher" in pattern_availability
+        assert "pattern_analyzer" in pattern_availability
+        assert "spacy_available" in pattern_availability
+        assert "dependencies_available" in pattern_availability
+
+        # Test documentation components flags
+        doc_components = summary["documentation_components"]
+        assert doc_components["decision_tree_integration"] is True
+        assert doc_components["category_thresholds"] is True
+        assert doc_components["context_strategies"] is True
+        assert doc_components["prompt_utilities"] is True
+        assert doc_components["performance_benchmarks"] is True
+
+        # Test prompt building capabilities
+        prompt_capabilities = summary["prompt_building_capabilities"]
+        assert prompt_capabilities["quick_categorization"] is True
+        assert prompt_capabilities["comprehensive_analysis"] is True
+        assert prompt_capabilities["batch_processing"] is True
+        assert prompt_capabilities["token_optimization"] is True
+        assert prompt_capabilities["pattern_hint_integration"] is True
+
+        # Test performance targets format
+        targets = summary["performance_targets"]
+        assert "single_item_analysis" in targets
+        assert "batch_processing" in targets
+        assert "memory_usage" in targets
+        assert "accuracy_threshold" in targets

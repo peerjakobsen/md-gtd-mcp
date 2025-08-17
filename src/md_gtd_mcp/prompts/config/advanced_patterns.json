@@ -1,0 +1,249 @@
+{
+  "category_descriptions_with_thresholds": {
+    "next-action": {
+      "description": "A single, specific physical action that can be completed in one session. Must be concrete, doable, and clearly defined.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "[VERB] + [NOUN] with single action verbs",
+          "Imperative sentences (commands)",
+          "Simple sentence structures"
+        ],
+        "rapidfuzz_keywords": [
+          "call", "email", "write", "buy", "send", "review", "check"
+        ],
+        "textstat_indicators": {
+          "word_count": {"min": 2, "max": 15},
+          "flesch_reading_ease": {"min": 60},
+          "confidence_threshold": 0.7
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.8,
+        "rapidfuzz_fuzzy": 0.85,
+        "textstat_complexity": 0.6,
+        "combined_minimum": 0.7
+      },
+      "context_assignment": {
+        "required": true,
+        "suggestions": ["@calls", "@computer", "@errands", "@office", "@home"],
+        "default_fallback": "@anywhere"
+      },
+      "validation_rules": [
+        "Must start with action verb",
+        "Should be specific and measurable",
+        "Cannot require multiple sessions",
+        "Must have clear completion criteria"
+      ],
+      "common_patterns": [
+        "Call [PERSON] about [TOPIC]",
+        "Send email to [PERSON] regarding [SUBJECT]",
+        "Review [DOCUMENT] for [PURPOSE]",
+        "Buy [ITEM] at [LOCATION]"
+      ]
+    },
+    "project": {
+      "description": "A desired outcome requiring multiple actions. Has a clear definition of 'done' and needs planning and support material.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "[VERB] + [NOUN] with complex action verbs",
+          "Multiple clause sentences",
+          "Future tense constructions",
+          "Modal verbs (should, would, could)"
+        ],
+        "rapidfuzz_keywords": [
+          "implement", "develop", "create", "build", "design", "establish", "launch", "complete", "organize"
+        ],
+        "textstat_indicators": {
+          "word_count": {"min": 15},
+          "flesch_reading_ease": {"max": 50},
+          "confidence_threshold": 0.6
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.7,
+        "rapidfuzz_fuzzy": 0.8,
+        "textstat_complexity": 0.8,
+        "combined_minimum": 0.6
+      },
+      "context_assignment": {
+        "required": false,
+        "suggestions": ["@computer", "@office"],
+        "default_fallback": null
+      },
+      "validation_rules": [
+        "Must have clear outcome statement",
+        "Should require multiple next actions",
+        "Must be achievable within reasonable timeframe",
+        "Should have measurable completion criteria"
+      ],
+      "common_patterns": [
+        "Implement [SYSTEM] with [FEATURES]",
+        "Develop [PRODUCT] for [AUDIENCE]",
+        "Create [OUTCOME] by [DEADLINE]",
+        "Launch [INITIATIVE] with [GOALS]"
+      ]
+    },
+    "waiting-for": {
+      "description": "Actions delegated to others or pending external factors. Track what you're waiting to receive, not what you've sent.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "Dependency parsing for 'waiting [PREP] [PERSON]'",
+          "Passive voice constructions",
+          "Person entity + delegation verb",
+          "Future tense with external agent"
+        ],
+        "rapidfuzz_keywords": [
+          "waiting", "pending", "assigned", "delegated", "requested", "expecting", "scheduled", "blocked", "depends"
+        ],
+        "textstat_indicators": {
+          "word_count": {"min": 5},
+          "confidence_threshold": 0.7
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.9,
+        "rapidfuzz_fuzzy": 0.85,
+        "textstat_complexity": 0.5,
+        "combined_minimum": 0.7
+      },
+      "context_assignment": {
+        "required": false,
+        "suggestions": ["@agenda"],
+        "default_fallback": null
+      },
+      "validation_rules": [
+        "Must identify who/what you're waiting for",
+        "Should include expected timeframe",
+        "Must have clear completion criteria",
+        "Should include follow-up action if needed"
+      ],
+      "common_patterns": [
+        "Waiting for [PERSON] to [ACTION]",
+        "Pending [ITEM] from [SOURCE]",
+        "Expecting [DELIVERABLE] by [DATE]",
+        "[PERSON] will [ACTION] by [DEADLINE]"
+      ]
+    },
+    "someday-maybe": {
+      "description": "Things you might want to do someday but are not committed to right now. Future possibilities that require no immediate action.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "Modal verbs (might, could, should, would)",
+          "Future conditional constructions",
+          "Uncertainty markers",
+          "Hypothetical language patterns"
+        ],
+        "rapidfuzz_keywords": [
+          "someday", "maybe", "might", "consider", "think about", "eventually", "possibly", "perhaps", "when time permits"
+        ],
+        "textstat_indicators": {
+          "word_count": {"min": 3},
+          "confidence_threshold": 0.5
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.8,
+        "rapidfuzz_fuzzy": 0.85,
+        "textstat_complexity": 0.4,
+        "combined_minimum": 0.5
+      },
+      "context_assignment": {
+        "required": false,
+        "suggestions": ["@anywhere"],
+        "default_fallback": null
+      },
+      "validation_rules": [
+        "Must represent future possibility",
+        "Should not have immediate deadline",
+        "Must be something you might want to do",
+        "Should be reviewed during weekly reviews"
+      ],
+      "common_patterns": [
+        "Maybe [ACTION] someday",
+        "Consider [OPTION] in the future",
+        "Might want to [ACTION] when [CONDITION]",
+        "Think about [POSSIBILITY]"
+      ]
+    },
+    "reference": {
+      "description": "Information that might be useful later but requires no action. Keep for potential future reference and knowledge.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "Noun-heavy constructions",
+          "Information entities (dates, names, facts)",
+          "Static descriptive language",
+          "No action verbs present"
+        ],
+        "rapidfuzz_keywords": [
+          "info", "information", "details", "documentation", "reference", "notes", "data", "facts", "remember", "keep"
+        ],
+        "textstat_indicators": {
+          "word_count": {"min": 1},
+          "confidence_threshold": 0.6
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.7,
+        "rapidfuzz_fuzzy": 0.8,
+        "textstat_complexity": 0.5,
+        "combined_minimum": 0.6
+      },
+      "context_assignment": {
+        "required": false,
+        "suggestions": ["@computer"],
+        "default_fallback": null
+      },
+      "validation_rules": [
+        "Must be information only",
+        "Should have potential future value",
+        "Must not require immediate action",
+        "Should be easily retrievable"
+      ],
+      "common_patterns": [
+        "Contact info for [PERSON/ORGANIZATION]",
+        "Details about [TOPIC]",
+        "Notes from [EVENT/MEETING]",
+        "Information about [SUBJECT]"
+      ]
+    },
+    "trash": {
+      "description": "Items with no value that can be discarded. Neither actionable nor worth keeping as reference.",
+      "pattern_matching": {
+        "spacy_patterns": [
+          "Negative constructions",
+          "Cancellation language",
+          "Dismissive patterns"
+        ],
+        "rapidfuzz_keywords": [
+          "delete", "ignore", "nevermind", "cancel", "discard", "trash", "junk", "spam", "unimportant"
+        ],
+        "textstat_indicators": {
+          "confidence_threshold": 0.8
+        }
+      },
+      "confidence_thresholds": {
+        "spacy_linguistic": 0.9,
+        "rapidfuzz_fuzzy": 0.9,
+        "textstat_complexity": 0.3,
+        "combined_minimum": 0.8
+      },
+      "context_assignment": {
+        "required": false,
+        "suggestions": [],
+        "default_fallback": null
+      },
+      "validation_rules": [
+        "Must have no actionable value",
+        "Should have no reference value",
+        "Must be safe to discard",
+        "Should not impact future commitments"
+      ],
+      "common_patterns": [
+        "Delete [ITEM]",
+        "Cancel [REQUEST]",
+        "Ignore [MESSAGE]",
+        "Discard [INFORMATION]"
+      ]
+    }
+  }
+}
