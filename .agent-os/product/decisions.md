@@ -207,8 +207,8 @@
 - Negative: May require user education about new inbox behavior
 
 ### D007: Convert Read-Only Operations to MCP Resources
-- **Status**: Proposed
-- **Date**: 2025-08-16
+- **Status**: Decided
+- **Date**: 2025-08-16 (Proposed), 2025-08-17 (Implemented)
 - **Category**: Architecture
 - **Stakeholders**: Development Team, Product Owner
 
@@ -219,16 +219,21 @@
 2. Convert to resources following MCP protocol best practices
 3. Hybrid approach with both tools and resources
 
-**Proposal**: Convert read-only file operations to MCP resources using resource templates.
+**Decision**: Convert read-only file operations to MCP resources using resource templates, maintaining tools only for write operations.
 
-**Rationale**:
-- MCP protocol distinguishes between tools (actions) and resources (read-only data)
-- Resources are semantically correct for file reading operations
-- Resources support readOnlyHint annotation for better LLM understanding
-- Resource templates enable natural URI-based access patterns
-- Better caching and performance characteristics
-- Aligns with REST-like principles (GET vs POST operations)
-- FastMCP documentation shows file operations commonly implemented as resources
+**Rationale - Benefits of Resources for Read-Only Operations**:
+- **Semantic clarity**: Resources explicitly communicate that operations are read-only and stateless, making the API more self-documenting
+- **Caching optimization**: Resources are designed with caching in mind; clients can implement caching strategies since resources are guaranteed to be idempotent
+- **Simpler client implementation**: For simple read operations, resources provide a straightforward pattern without worrying about side effects
+- **Better separation of concerns**: Resources cleanly separate data retrieval from actions, making architecture more maintainable
+- **Standardized patterns**: Resources follow REST-like conventions that developers are familiar with
+- **MCP protocol compliance**: Resources are semantically correct for file reading operations
+- **Better LLM understanding**: Resources support readOnlyHint annotation for improved AI assistant interaction
+
+**Trade-offs Acknowledged**:
+- **Limited flexibility**: Resources are more rigid for complex queries with multiple parameters or dynamic filtering
+- **Potential duplication**: Might need both resources and tools for similar functionality if complex queries are required later
+- **Less discoverable parameters**: Tools provide richer parameter schemas while resources have simpler URI-based parameters
 
 **Implementation Details**:
 - Convert list_gtd_files to resource template: `gtd://{vault_path}/files`
@@ -248,6 +253,16 @@
 - Neutral: Requires updating existing implementation and tests
 - Negative: Breaking change for current tool-based clients
 - Negative: Additional implementation effort for resource templates
+
+**Outcome**:
+Implementation successfully completed with all 5 resource templates functioning correctly:
+- `gtd://{vault_path}/files` - File listings
+- `gtd://{vault_path}/files/{file_type}` - Filtered file listings
+- `gtd://{vault_path}/file/{file_path}` - Single file content
+- `gtd://{vault_path}/content` - Batch content access
+- `gtd://{vault_path}/content/{file_type}` - Filtered batch content
+
+Only write operations remain as tools (setup_gtd_vault), establishing clean separation between read operations (resources) and write operations (tools). All tests updated and passing with resource-based approach.
 
 ### D008: Use MCP Prompts for LLM-Powered GTD Workflows
 - **Status**: Decided
@@ -363,3 +378,54 @@ This structure ensures SOPs are actionable workflow guides rather than passive d
 - Neutral: Requires SOP creation and maintenance by users
 - Neutral: Can evolve to more complex structures if needed
 - Negative: Additional implementation complexity for SOP-prompt integration
+
+### D010: Hybrid Tool/Resource Architecture Pattern
+- **Status**: Decided
+- **Date**: 2025-08-17
+- **Category**: Architecture
+- **Stakeholders**: Development Team, Future Contributors
+
+**Context**: With the successful implementation of MCP resources for read-only operations (D007), the server now uses a hybrid approach with both tools and resources. Clear guidance is needed for future development to maintain architectural consistency and help contributors choose the appropriate pattern.
+
+**Alternatives**:
+1. Establish no formal guidelines and decide case-by-case
+2. Convert everything to one pattern (all tools or all resources)
+3. Create clear decision criteria for when to use each pattern
+4. Allow both patterns without restriction
+
+**Decision**: Establish clear architectural guidelines for choosing between tools and resources based on operation characteristics and complexity.
+
+**Decision Criteria**:
+
+**Use Resources When**:
+- **Simple, cacheable data** that can be identified by a URI pattern (e.g., file contents, configuration settings)
+- **Read-only operations** that benefit from REST-like access patterns
+- **Idempotent operations** where repeated calls return identical results
+- **Data that clients might cache** for performance optimization
+- **Straightforward GET-style operations** without complex processing logic
+
+**Use Tools When**:
+- **Write operations** that modify state or create/update files
+- **Complex queries** requiring extensive parameters or validation rules
+- **Multi-step processing operations** with business logic
+- **Operations requiring rich parameter schemas** with detailed validation
+- **Actions with side effects** or non-idempotent behavior
+
+**Rationale**:
+- **Semantic clarity**: Tools and resources have distinct purposes in MCP protocol
+- **Performance optimization**: Resources enable better caching strategies
+- **Developer experience**: Clear patterns reduce decision fatigue and improve API consistency
+- **Client compatibility**: Follows MCP best practices for optimal LLM understanding
+- **Maintainability**: Consistent architecture patterns are easier to maintain and extend
+
+**Implementation Examples**:
+- **Resources**: `gtd://{vault_path}/files` (file listings), `gtd://{vault_path}/file/{path}` (file content)
+- **Tools**: `setup_gtd_vault` (creates files), future `process_inbox` (complex workflow), `create_project` (state modification)
+
+**Consequences**:
+- Positive: Clear architectural guidance for all future MCP server features
+- Positive: Consistent API design that follows MCP protocol semantics
+- Positive: Optimal performance through appropriate use of caching (resources) vs. actions (tools)
+- Positive: Better LLM understanding through semantic correctness
+- Neutral: Requires training new contributors on decision criteria
+- Negative: May occasionally require implementing both patterns for edge cases

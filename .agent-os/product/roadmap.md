@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Phase 1: Foundation & Core MCP Server (MVP)
-**Status**: ~67% Complete (10/15 features implemented)
+**Status**: ~73% Complete (11/15 features implemented)
 
 **Goal**: Build a functional MCP server that can read and analyze Obsidian GTD markdown files
 
@@ -26,7 +26,7 @@
 - [x] Read GTD File Tool (S) - read_gtd_file for parsing single GTD files with frontmatter and tasks
 - [x] List GTD Files Tool (S) - list_gtd_files for vault overview with metadata and filtering
 - [x] Read GTD Files Tool (M) - read_gtd_files for batch reading with comprehensive content extraction
-- [ ] Convert Read-Only Operations to Resources (M) - **PROPOSED** (Proposal D007). Convert list_gtd_files, read_gtd_file, and read_gtd_files from tools to resources following MCP protocol best practices. Resources are semantically correct for read-only operations and provide better LLM understanding through readOnlyHint annotations. Proposed URIs: gtd://{vault_path}/files, gtd://{vault_path}/file/{file_path}, gtd://{vault_path}/content
+- [x] Convert Read-Only Operations to Resources (M) - **COMPLETED** (Decision D007). Successfully converted list_gtd_files, read_gtd_file, and read_gtd_files from tools to resources following MCP protocol best practices. Resources provide semantic correctness for read-only operations and better LLM understanding through readOnlyHint annotations. Implemented URIs: gtd://{vault_path}/files, gtd://{vault_path}/file/{file_path}, gtd://{vault_path}/content, plus filtered variants
 - [x] Integration Testing Suite (L) - 10 end-to-end workflow scenarios tested (onboarding, migration, processing, review, etc.)
 - [x] Error Handling & Validation (M) - Robust error handling for file operations and invalid inputs. Comprehensive error recovery tested
 

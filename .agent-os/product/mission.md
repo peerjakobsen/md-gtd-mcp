@@ -95,6 +95,7 @@ An MCP server that transforms Obsidian GTD workflows into AI-powered productivit
 ### Integration & Workflow
 - **Native Obsidian Integration**: Work directly with existing folder structures, tags, and linking patterns
 - **MCP Protocol Support**: Enable any Claude Code-compatible AI assistant to interact with GTD systems
+- **Semantic API Design**: Clean separation between resources (read-only GTD data access) and tools (write operations) following MCP protocol best practices for optimal caching, client understanding, and REST-like patterns
 - **LLM-Optimized Tool Descriptions**: Enhanced tool descriptions with GTD context, usage examples, and behavioral annotations for optimal Claude Desktop understanding and interaction
 - **Pre-configured GTD Workflow Prompts**: Ready-to-use prompt templates for weekly reviews, inbox processing, project planning, and daily planning that guide Claude through proper GTD methodology
 - **Context-Aware Tool Suggestions**: Intelligent tool adaptation based on user context (meeting notes vs email processing) with specialized parameter defaults and descriptions
