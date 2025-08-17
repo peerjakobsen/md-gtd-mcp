@@ -388,6 +388,16 @@ class GTDRuleEngine:
         self.patterns = GTDPatterns()
         self.decision_tree = GTDDecisionTree()
 
+        # Initialize advanced pattern matcher for enhanced context detection
+        try:
+            from .pattern_matcher import AdvancedPatternMatcher
+
+            self.advanced_matcher: AdvancedPatternMatcher | None = (
+                AdvancedPatternMatcher()
+            )
+        except ImportError:
+            self.advanced_matcher = None
+
     def get_context_patterns(self) -> dict[str, list[str]]:
         """Get all context keyword patterns."""
         return self.patterns.CONTEXT_PATTERNS.copy()
@@ -445,10 +455,13 @@ class GTDRuleEngine:
         Note: This is simple keyword matching, not intelligent analysis.
         The actual reasoning happens in Claude Desktop via MCP prompts.
         """
+        if not text or not text.strip():
+            return []
+
         text_lower = text.lower()
         suggested_contexts = []
 
-        # Check each context pattern for matches
+        # Basic keyword matching (original functionality)
         for context, keywords in self.patterns.CONTEXT_PATTERNS.items():
             for keyword in keywords:
                 if keyword in text_lower:
@@ -457,6 +470,134 @@ class GTDRuleEngine:
                     break  # Found match for this context, move to next
 
         return suggested_contexts
+
+    def suggest_contexts_advanced(self, text: str, max_contexts: int = 3) -> list[str]:
+        """
+        Suggest contexts using advanced pattern matching with fuzzy/semantic analysis.
+
+        Args:
+            text: Input text to analyze
+            max_contexts: Maximum number of contexts to return
+
+        Returns:
+            List of suggested contexts using advanced matching techniques
+        """
+        if not text or not text.strip():
+            return []
+
+        # Fallback to basic matching if advanced features unavailable
+        if (
+            self.advanced_matcher is None
+            or not self.advanced_matcher.has_advanced_features()
+        ):
+            return self.suggest_contexts_for_text(text)
+
+        # Use advanced pattern matching
+        suggested = self.advanced_matcher.suggest_multiple_contexts(
+            text, self.patterns.CONTEXT_PATTERNS, max_contexts
+        )
+
+        return suggested
+
+    def suggest_contexts_with_confidence(self, text: str) -> list[tuple[str, float]]:
+        """
+        Suggest contexts with confidence scores using advanced pattern matching.
+
+        Args:
+            text: Input text to analyze
+
+        Returns:
+            List of (context, confidence_score) tuples sorted by confidence
+        """
+        if not text or not text.strip():
+            return []
+
+        # Fallback to basic matching if advanced features unavailable
+        if (
+            self.advanced_matcher is None
+            or not self.advanced_matcher.has_advanced_features()
+        ):
+            basic_contexts = self.suggest_contexts_for_text(text)
+            return [(context, 1.0) for context in basic_contexts]
+
+        # Use combined scoring from advanced matcher
+        return self.advanced_matcher.suggest_contexts_combined(
+            text, self.patterns.CONTEXT_PATTERNS
+        )
+
+    def suggest_contexts_fuzzy(
+        self, text: str, threshold: float = 80.0
+    ) -> list[tuple[str, float]]:
+        """
+        Suggest contexts using fuzzy string matching.
+
+        Args:
+            text: Input text to analyze
+            threshold: Minimum fuzzy match score (0-100)
+
+        Returns:
+            List of (context, score) tuples for fuzzy matches above threshold
+        """
+        if not text or not text.strip():
+            return []
+
+        if self.advanced_matcher is None:
+            return []
+
+        return self.advanced_matcher.suggest_contexts_fuzzy(
+            text, self.patterns.CONTEXT_PATTERNS, threshold
+        )
+
+    def get_context_suggestions_with_explanations(self, text: str) -> dict[str, Any]:
+        """
+        Get comprehensive context suggestions with explanations for prompts.
+
+        Returns detailed context analysis for inclusion in MCP prompts.
+        """
+        if not text or not text.strip():
+            return {"contexts": [], "explanations": [], "confidence": "low"}
+
+        # Get basic suggestions
+        basic_contexts = self.suggest_contexts_for_text(text)
+
+        # Get advanced suggestions if available
+        advanced_available = (
+            self.advanced_matcher is not None
+            and self.advanced_matcher.has_advanced_features()
+        )
+
+        if advanced_available:
+            advanced_contexts = self.suggest_contexts_with_confidence(text)
+            fuzzy_matches = self.suggest_contexts_fuzzy(text, threshold=70.0)
+        else:
+            advanced_contexts = [(ctx, 1.0) for ctx in basic_contexts]
+            fuzzy_matches = []
+
+        # Determine confidence level
+        if advanced_contexts and advanced_contexts[0][1] > 0.8:
+            confidence = "high"
+        elif advanced_contexts and advanced_contexts[0][1] > 0.4:
+            confidence = "medium"
+        else:
+            confidence = "low"
+
+        # Create explanations for prompts
+        explanations = []
+        for context, score in advanced_contexts[:3]:  # Top 3 suggestions
+            if advanced_available:
+                explanations.append(f"{context}: {score:.2f} confidence")
+            else:
+                explanations.append(f"{context}: keyword match")
+
+        return {
+            "contexts": [ctx for ctx, _ in advanced_contexts[:3]],
+            "basic_matches": basic_contexts,
+            "advanced_matches": advanced_contexts[:5] if advanced_available else [],
+            "fuzzy_matches": fuzzy_matches[:3],
+            "explanations": explanations,
+            "confidence": confidence,
+            "advanced_available": advanced_available,
+        }
 
     def detect_two_minute_task(self, text: str) -> bool:
         """

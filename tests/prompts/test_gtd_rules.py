@@ -357,3 +357,183 @@ class TestGTDRuleEngine:
         suggested = engine.suggest_contexts_for_text(unclear_text)
         # Should return empty list or @anywhere
         assert isinstance(suggested, list)
+
+
+class TestKeywordPatternMatching:
+    """Test simple keyword pattern matching functionality (Task 2.3)."""
+
+    def test_context_keyword_pattern_dictionaries(self) -> None:
+        """Test context keyword pattern dictionaries structure."""
+        patterns = GTDPatterns.CONTEXT_PATTERNS
+
+        # Test basic structure
+        assert isinstance(patterns, dict)
+        assert len(patterns) > 0
+
+        # Test all contexts have keyword lists
+        for context, keywords in patterns.items():
+            assert isinstance(keywords, list)
+            assert len(keywords) > 0
+            assert context.startswith("@"), f"Context {context} should start with @"
+
+            # All keywords should be strings and lowercase
+            for keyword in keywords:
+                assert isinstance(keyword, str)
+                assert len(keyword) > 0
+                assert keyword == keyword.lower(), (
+                    f"Keyword '{keyword}' should be lowercase"
+                )
+
+    def test_pattern_lookup_functions_basic(self) -> None:
+        """Test basic pattern lookup functions (string-in-list operations)."""
+        engine = GTDRuleEngine()
+
+        # Test exact keyword matches
+        test_cases = [
+            ("call mom", ["@calls"]),
+            ("send email", ["@computer"]),
+            ("buy milk", ["@errands"]),
+            ("work meeting", ["@office"]),
+            ("home maintenance", ["@home"]),
+        ]
+
+        for text, expected_contexts in test_cases:
+            suggested = engine.suggest_contexts_for_text(text)
+            for expected in expected_contexts:
+                assert expected in suggested, f"Text '{text}' should suggest {expected}"
+
+    def test_multiple_pattern_matching_overlapping_contexts(self) -> None:
+        """Test multiple pattern matching for overlapping contexts."""
+        engine = GTDRuleEngine()
+
+        # Test cases that should match multiple contexts
+        overlapping_cases = [
+            ("call work about meeting", ["@calls", "@office"]),
+            ("email from home computer", ["@computer", "@home"]),
+            ("phone app research", ["@phone", "@computer"]),
+            ("buy work supplies", ["@errands", "@office"]),
+        ]
+
+        for text, expected_contexts in overlapping_cases:
+            suggested = engine.suggest_contexts_for_text(text)
+            # Should find at least one of the expected contexts
+            found_any = any(ctx in suggested for ctx in expected_contexts)
+            assert found_any, (
+                f"Text '{text}' should match at least one of {expected_contexts}, "
+                f"got {suggested}"
+            )
+
+    def test_pattern_case_insensitivity(self) -> None:
+        """Test pattern case-insensitivity."""
+        engine = GTDRuleEngine()
+
+        # Test same text with different cases
+        test_cases = [
+            "CALL the client",
+            "Call the client",
+            "call the client",
+            "CaLl ThE cLiEnT",
+        ]
+
+        # All should produce the same result
+        first_result = engine.suggest_contexts_for_text(test_cases[0])
+        assert "@calls" in first_result or "@phone" in first_result
+
+        for text in test_cases[1:]:
+            result = engine.suggest_contexts_for_text(text)
+            # Should contain same contexts (order doesn't matter)
+            assert set(result) == set(first_result), (
+                f"Case variation '{text}' should give same result"
+            )
+
+    def test_pattern_matching_edge_cases(self) -> None:
+        """Test pattern matching edge cases."""
+        engine = GTDRuleEngine()
+
+        # Empty string
+        result = engine.suggest_contexts_for_text("")
+        assert result == []
+
+        # Only whitespace
+        result = engine.suggest_contexts_for_text("   ")
+        assert result == []
+
+        # No matching patterns
+        result = engine.suggest_contexts_for_text("xyz abc def")
+        assert isinstance(result, list)
+
+        # Very long text with patterns
+        long_text = "This is a very long text " * 50 + " call someone"
+        result = engine.suggest_contexts_for_text(long_text)
+        assert "@calls" in result or "@phone" in result
+
+    def test_partial_word_matching(self) -> None:
+        """Test that patterns match within words appropriately."""
+        engine = GTDRuleEngine()
+
+        # Should match patterns within larger words
+        test_cases = [
+            ("telephone call", "@calls"),
+            ("research project", "@computer"),
+            ("shopping list", "@errands"),
+        ]
+
+        for text, expected_context in test_cases:
+            suggested = engine.suggest_contexts_for_text(text)
+            assert expected_context in suggested, (
+                f"Text '{text}' should suggest {expected_context}"
+            )
+
+    def test_pattern_priority_no_duplicates(self) -> None:
+        """Test that each context appears only once in suggestions."""
+        engine = GTDRuleEngine()
+
+        # Text that could match same context multiple times
+        text = "call phone telephone contact"  # Multiple @calls triggers
+        suggested = engine.suggest_contexts_for_text(text)
+
+        # Should not have duplicates
+        assert len(suggested) == len(set(suggested)), (
+            "Should not have duplicate contexts"
+        )
+        assert "@calls" in suggested or "@phone" in suggested
+
+    def test_context_pattern_completeness(self) -> None:
+        """Test that all defined contexts have meaningful patterns."""
+        patterns = GTDPatterns.CONTEXT_PATTERNS
+
+        # Each context should have reasonable number of patterns
+        for context, keywords in patterns.items():
+            assert len(keywords) >= 3, (
+                f"Context {context} should have at least 3 keywords"
+            )
+
+            # No empty or whitespace-only keywords
+            for keyword in keywords:
+                assert keyword.strip() == keyword, (
+                    f"Keyword '{keyword}' should not have extra whitespace"
+                )
+                assert len(keyword.strip()) > 0, "Keyword should not be empty"
+
+    def test_suggest_contexts_return_type_consistency(self) -> None:
+        """Test that suggest_contexts_for_text always returns consistent types."""
+        engine = GTDRuleEngine()
+
+        test_inputs = [
+            "call someone",
+            "",
+            "no matches here xyz",
+            "multiple call email errands",
+            "UPPERCASE TEXT",
+        ]
+
+        for text in test_inputs:
+            result = engine.suggest_contexts_for_text(text)
+            assert isinstance(result, list), f"Should always return list for '{text}'"
+            for item in result:
+                assert isinstance(item, str), (
+                    f"All items should be strings for '{text}'"
+                )
+                assert item.startswith("@"), (
+                    f"All contexts should start with @ for '{text}'"
+                )

@@ -13,6 +13,7 @@
 
 ### 2. Implement GTD static rule engine (server-side)
 **Note: Following Decision D008, this provides static GTD methodology rules for MCP prompts, NOT intelligent analysis**
+**Note: You can use python libraries rapidfuzz, rank_bm25 and sentence-transformers for text pattern matching. You can use them in combination **
 
 - [x] 2.1 Write tests for GTD methodology constants and static patterns
   - Test GTD clarifying questions format and completeness
@@ -24,14 +25,14 @@
   - Decision tree text templates for prompt context
   - Category validation rules and definitions
   - GTD phase indicators and workflow constants
-- [ ] 2.3 Write tests for simple keyword pattern matching
+- [x] 2.3 Write tests for simple keyword pattern matching
   - Test context keyword pattern dictionaries
-  - Test pattern lookup functions (string-in-list operations)
+  - Test pattern lookup functions
   - Test multiple pattern matching for overlapping contexts
   - Test pattern case-insensitivity
-- [ ] 2.4 Implement context keyword pattern dictionaries
+- [x] 2.4 Implement context keyword pattern dictionaries
   - Static keyword lists for each GTD context (@calls, @computer, etc.)
-  - Simple pattern matching utilities (no NLP)
+  - Simple pattern matching utilities (no LLM but ok to use python libraries rapidfuzz, rank_bm25 and sentence-transformers)
   - Context suggestion helpers based on keyword presence
   - Multiple context support for items matching several patterns
 - [ ] 2.5 Write tests for time/complexity indicator patterns
